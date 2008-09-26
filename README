@@ -3,7 +3,7 @@
 This library provides a Python API for accessing
 Gnip (http://gnipcentral.com) web services.  There are two basic
 roles for using Gnip: subscribers and publishers.  This library
-provides a single API for both roles.
+provides a single interface for both roles.
 
 == Consumer
 
@@ -13,16 +13,14 @@ As a consumer one thing you might be interested in immediately is to
 grab recent activity at a particular publisher.  To do this you must
 create a connection to Gnip using your user name and password.  Once
 that connection is established you can get the publisher and request
-it's activities stream.  
-
-    from gnip import *
+its activities stream.  
 
     gnip = Gnip("me@mydomain.com", "my-password")
-    gnip.get_publisher_activites("digg")
+    gnip.get_publisher_notifications("digg")
 
 Alternatively, to retrieve the raw XML of the activities, do:
 
-    gnip.get_publisher_xml("digg")
+    gnip.get_publisher_notifications_xml("digg")
 
 
 === Example 2: Retrieve all activities at a publisher around a specific time
@@ -33,45 +31,41 @@ past a time when getting the activity stream.  This will return the
 activity stream as it existed around that time.  The results will be
 include some activities before and after the time you specify.
 
-    from gnip import *
-
     gnip = Gnip("me@mydomain.com", "my-password")
-    gnip.get_publisher_activites("digg", datetime.datetime.utcnow() - 
-	datetime.timedelta(minutes=30)) # 30 minutes ago
+    gnip.get_publisher_notifications("digg", datetime.datetime.utcnow() - 
+        datetime.timedelta(minutes=30)) # 30 minutes ago
 
 
 === Example 3: Create an activity stream that includes only activities
     done by users you care about.
 
 If you would like to filter a set of publishers by the user that
-performed the activity you may create a collection to do so.  Once
-created a collection's activity stream is retrieved much like a
+performed the activity you may create a filter to do so.  Once
+created a filter's activity stream is retrieved much like a
 publishers.  Activity that has already occured will not be included in
-a collection.  Therefore any new collection will be empty until some
+a filter.  Therefore any new filter will be empty until some
 new matching activity has occured.
 
-Note: Collection names must be unique across the system so you might
-want to attach your username to the logical name of any collections
+Note: Filter names must be unique across the system so you might
+want to attach your username to the logical name of any filters
 you create.
 
-    from gnip import *
     gnip = Gnip("me@mydomain.com", "my-password")
 
-    my_collection = GnipCollection("test-collection", 
-        [["digg", "bob"], ["digg", "sally"], ["flickr", "joe"]])
+    my_filter = Filter(name="test-filter", 
+        rules=[["actor", "me"], ["actor", "you"], ["actor", "bob"]])
 
-    gnip.create_collection(my_collection)
-    gnip.get_collection_activities(my_collection.name)
+    gnip.create_filter("digg", my_filter)
+    gnip.get_filter_notifications("digg", my_filter)
 
-=== Example 4: Delete a collection
+=== Example 4: Delete a filter
 
-If you decide you no longer need a collection you have created in the
+If you decide you no longer need a filter you have created in the
 past you can remove it.
 
-    from gnip import *
     gnip = Gnip("me@mydomain.com", "my-password")
 
-    gnip.delete_collection("test-collection)
+    gnip.delete_filter("digg", "test-filter")
 
 == Publisher
 
@@ -80,8 +74,6 @@ past you can remove it.
 If you are interested in publishing activity you will need to create a
 publisher.  Once the publisher resource is created, activities can be
 published in it's activity stream.
-
-    from gnip import *
 
     gnip = Gnip("me@mydomain.com", "my-password")
     gnip.publish("digg")
@@ -92,7 +84,7 @@ published in it's activity stream.
 
 == Additional notes
 
-There are test cases included in the file "gnip_unittest.py". The test
+There are test cases included in the files "*Test.py". The test
 cases also provide examples of usage. Note that you'll need to fill in the
 information for the TEST_* constants at the top of the class, in order for
 the test cases to work properly.
