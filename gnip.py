@@ -2,9 +2,12 @@ import activity
 import filter
 import datetime
 import davclient
+import gnipexception
 import iso8601
 import time
 import httplib2
+import gzip
+import StringIO
 from xml.dom.minidom import parseString
 
 class Gnip:
@@ -33,11 +36,29 @@ class Gnip:
         self.base_url = "https://" + gnip_server
         
         # Configure authentication
-        # Configure authentication
         self.client = davclient.DAVClient(self.base_url)
         self.client.set_basic_auth(username,password)
         self.client.headers['Accept'] = 'application/xml'
         self.client.headers['User-Agent'] = 'GnipPython/0.1 (developers@gnipcentral.com)'
+        self.client.headers['Content-Encoding'] = 'gzip'
+        self.client.headers['Content-Type'] = 'application/xml'
+
+
+    def compress_with_gzip(self, string):
+        """Compress a string with GZIP
+
+        @type string string
+        @param string The data to compress
+        @return string gzipped data
+
+        Does a proper gzip of the incoming string and returns it as a string
+
+        """
+        zbuf = StringIO.StringIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=9)
+        zfile.write(string)
+        zfile.close()
+        return zbuf.getvalue()
 
     def do_http_delete(self, url_path):
         """Do a HTTP DELETE.
@@ -79,7 +100,6 @@ class Gnip:
         """
 
         self.client.head(self.base_url)
-        
         return self.client.response
 
     def do_http_post(self, url_path, data):
@@ -96,8 +116,7 @@ class Gnip:
 
         """
 
-        self.client.post(self.base_url + url_path, data, 
-                         {"Content-Type" : "application/xml"})
+        self.client.post(self.base_url + url_path, self.compress_with_gzip(data))
         return self.client.response.body
 
     def do_http_put(self, url_path, data):
@@ -114,24 +133,8 @@ class Gnip:
 
         """
         
-        self.client.put(self.base_url + url_path, data, None,
-                        {"Content-Type" : "application/xml"})
+        self.client.put(self.base_url + url_path, self.compress_with_gzip(data))
         return self.client.response.body
-
-    def round_time(self, time):
-        """Round time to nearest five minutes.
-
-        @type time datetime
-        @param time The time to round
-        @return datetime object containing the time at the 
-                previous 5 minute mark
-
-        Rounds the time passed in down to the previous 5 minute mark.
-
-        """
-
-        new_min = time.minute - (time.minute % 5)
-        return time.replace(minute = new_min, second = 0)
 
     def sync_clock(self, time):
         """Adjust a time so that it corresponds with Gnip time
@@ -245,7 +248,7 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher + "/filters"
+        url_path = "/publishers/" + publisher + "/filters.xml"
         return self.do_http_post(url_path, data)
 
     def delete_filter(self, publisher, name):
@@ -278,6 +281,8 @@ class Gnip:
         """
 
         xml = self.find_filter_xml(publisher, name)
+        if "<error>" in xml:
+            return None
         the_filter = filter.Filter()
         the_filter.from_xml( xml)
         return the_filter
@@ -345,13 +350,15 @@ class Gnip:
             url_path = "/publishers/" + publisher + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
-            rounded_time = self.round_time(corrected_time)
-            time_string = self.time_to_string(rounded_time)
+            time_string = self.time_to_string(corrected_time)
     
             url_path = "/publishers/" + publisher + \
                 "/activity/" + time_string + ".xml"
 
-        return self.do_http_get(url_path)
+        xml = self.do_http_get(url_path)
+        print xml
+
+        return xml 
 
     def get_filter_activities(self, publisher, name, date_and_time=None):
         """Get a Gnip filter.
@@ -403,8 +410,7 @@ class Gnip:
             url_path = "/publishers/" + publisher + "/filters/" + name + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
-            rounded_time = self.round_time(corrected_time)
-            time_string = self.time_to_string(rounded_time)
+            time_string = self.time_to_string(corrected_time)
     
             url_path = "/publishers/" + publisher + "/filters/" + name + "/activity/" + \
                 time_string + ".xml"
@@ -457,8 +463,7 @@ class Gnip:
             url_path = "/publishers/" + publisher + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
-            rounded_time = self.round_time(corrected_time)
-            time_string = self.time_to_string(rounded_time)
+            time_string = self.time_to_string(corrected_time)
     
             url_path = "/publishers/" + publisher + \
                 "/notification/" + time_string + ".xml"
@@ -552,7 +557,6 @@ class Gnip:
         """
 
         url_path = "/publishers/" + publisher + "/filters/" + name + ".xml"
-
         return self.do_http_put(url_path, data)
 
 if __name__=="__main__":

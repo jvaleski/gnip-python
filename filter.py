@@ -8,7 +8,7 @@ class Filter:
 
     """
     
-    def __init__(self, name=None, post_url=None, jid=None, rules=None, full_data=None):
+    def __init__(self, name="", post_url=None, jid=None, rules=[], full_data="true"):
         """Initialize the class.
 
         @type name string
@@ -48,7 +48,7 @@ class Filter:
             xml += '<postUrl>' + self.post_url + '</postUrl>'
         elif self.jid is not None:
             xml += '<jid>' + self.jid + '</jid>'
-            
+
         for rule in self.rules:
             xml += '<rule type="' + rule[0] + '" value="' + rule[1] + '"/>' 
         xml += '</filter>'

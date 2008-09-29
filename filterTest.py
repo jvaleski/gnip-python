@@ -91,3 +91,6 @@ class FilterTestCase(unittest.TestCase):
             
         a_filter = filter.Filter(name=self.filterName, jid="joe@jabber.org", rules=self.rules, full_data=self.filterFullData)
         self.assertEqual(a_filter.to_xml(), expected_xml)
+
+if __name__ == '__main__':
+    unittest.main()
