@@ -2,7 +2,6 @@ import activity
 import filter
 import datetime
 import davclient
-import gnipexception
 import iso8601
 import time
 import httplib2
