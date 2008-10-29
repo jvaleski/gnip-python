@@ -38,7 +38,7 @@ class Gnip:
         self.client = davclient.DAVClient(self.base_url)
         self.client.set_basic_auth(username,password)
         self.client.headers['Accept'] = 'application/xml'
-        self.client.headers['User-Agent'] = 'GnipPython/0.1 (developers@gnipcentral.com)'
+        self.client.headers['User-Agent'] = 'Gnip-Client-Python/2.0.1'
         self.client.headers['Content-Encoding'] = 'gzip'
         self.client.headers['Content-Type'] = 'application/xml'
 
