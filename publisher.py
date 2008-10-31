@@ -1,0 +1,45 @@
+from xml.dom.minidom import parseString
+
+class Publisher:
+    """Gnip publisher container class
+
+    This class provides an abstraction from the Gnip publisher XML.
+
+    """
+    
+    def __init__(self, name=None, rule_types=None):
+        """Initialize the class.
+
+        @type name string
+        @param name The name of the publisher
+        @type rule_types list of strings
+        @param rule_types The rule types this publisher supports
+
+        Initializes the class with the proper variables. 
+
+        """
+        
+        self.name = name
+        self.rule_types=rule_types
+    
+    def to_xml(self):
+        xml = '<publisher name="' + self.name + '">'
+        xml += '<supportedRuleTypes>'
+        
+        for rule_type in self.rule_types:
+            xml += '<type>' + rule_type + '</type>'
+        
+        xml += '</supportedRuleTypes></publisher>'
+        
+        return xml
+    
+    def from_xml(self, xml):
+        root = parseString(xml).documentElement
+        self.name = root.getAttribute("name")
+        
+        self.rule_types = []
+        for node in root.childNodes:
+            if node.tagName == 'supportedRuleTypes':
+                for subnode in node.childNodes:
+                    if subnode.tagName == 'type':
+                        self.rule_types.append(subnode.childNodes[0].nodeValue)

@@ -8,30 +8,25 @@ class Filter:
 
     """
     
-    def __init__(self, name="", post_url=None, jid=None, rules=[], full_data="true"):
+    def __init__(self, name="", post_url=None, rules=[], full_data="true"):
         """Initialize the class.
 
         @type name string
         @param name The name of the filter
         @type post_url string
         @param post_url The URL to post filter activities to
-        @type jid string
-        @param jid The JabberID to post filter activities to
         @type rules list of strings of form (Type, Value)
         @param rules The rules for the collection
         @type full_data string
         @type full_data Whether or not this filter is for full data
 
-        Initializes the class with the proper variables. Note that only
-        one of post_url and jid will be used, with post_url taking
-        priority.
+        Initializes the class with the proper variables. 
 
         """
         
         self.name = name
         self.rules = rules
         self.post_url = post_url
-        self.jid = jid
         self.full_data = full_data
 
     def to_xml(self):
@@ -46,8 +41,6 @@ class Filter:
         xml = '<filter name="' + self.name + '" fullData="' + self.full_data + '">'
         if self.post_url is not None:
             xml += '<postUrl>' + self.post_url + '</postUrl>'
-        elif self.jid is not None:
-            xml += '<jid>' + self.jid + '</jid>'
 
         for rule in self.rules:
             xml += '<rule type="' + rule[0] + '" value="' + rule[1] + '"/>' 
@@ -79,10 +72,8 @@ class Filter:
         for node in root.childNodes:
             if node.tagName == 'postUrl':
                 self.post_url = node.childNodes[0].nodeValue
-            elif node.tagName == 'jid':
-                self.jid = node.childNodes[0].nodeValue
             elif node.tagName == 'rule':
                 self.rules.append([node.getAttribute('type'), node.getAttribute('value')])
 
     def __str__(self):
-        return "[" + self.name + ", " + self.post_url + ", " + self.jid + ", " + str(self.rules) + "]"
+        return "[" + self.name + ", " + self.post_url + ", " + str(self.rules) + "]"

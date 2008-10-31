@@ -9,7 +9,7 @@ class Activity:
     """
 
     def __init__(self, at=None, action=None, actor=None, regarding=None,
-                 source=None, tags=None, to=None, url=None):
+                 source=None, tags=None, to=None, url=None, body=None, raw = None):
         """Initialize the class.
 
         @type at datetime
@@ -28,6 +28,10 @@ class Activity:
         @param to Who the activity is directed toward
         @type url string
         @param url Reference to the original activity
+        @type body string
+        @param body Activity Body
+        @type raw string
+        @param raw Raw text of activity
         
         Initializes the class with the proper variables.
 
@@ -41,6 +45,8 @@ class Activity:
         self.tags = tags
         self.to = to
         self.url = url
+        self.body = body
+        self.raw = raw
 
     def get_at_as_string(self):
         """ Return 'at' member variable as a formatted string
@@ -83,7 +89,7 @@ class Activity:
         node = parseString(xml).documentElement
         self.from_node(node)
 
-    def from_node(self, node):
+    def from_node(self, root):
         """ Populate object from DOM node
 
         @type node DOM node
@@ -94,14 +100,22 @@ class Activity:
 
         """
                    
-        self.set_at_from_string(node.getAttribute("at"))
-        self.action = node.getAttribute("action")
-        self.actor = node.getAttribute("actor")
-        self.regarding = node.getAttribute("regarding")
-        self.source = node.getAttribute("source")
-        self.tags = node.getAttribute("tags").split(",")
-        self.to = node.getAttribute("to")
-        self.url = node.getAttribute("url")
+        self.set_at_from_string(root.getAttribute("at"))
+        self.action = root.getAttribute("action")
+        self.actor = root.getAttribute("actor")
+        self.regarding = root.getAttribute("regarding")
+        self.source = root.getAttribute("source")
+        self.tags = root.getAttribute("tags").split(",")
+        self.to = root.getAttribute("to")
+        self.url = root.getAttribute("url")
+
+        for node in root.childNodes:
+            if node.tagName == 'payload':
+                for subnode in node.childNodes:
+                    if subnode.tagName == 'body':
+                        self.body = subnode.childNodes[0].nodeValue
+                    elif subnode.tagName == 'raw':
+                        self.raw = subnode.childNodes[0].nodeValue
         
 
     def to_xml(self):
@@ -121,7 +135,19 @@ class Activity:
         xml += 'tags="' + ",".join(self.tags) + '" '
         xml += 'to="' + self.to + '" '
         xml += 'url="' + self.url + '"'
-        xml += '/>'
+
+        if self.body is None:
+            xml += '/>'
+        else:
+            xml += '>'
+            xml += '<payload><body>'
+            xml += self.body
+            xml += '</body>'
+            if self.raw is not None:
+                xml += '<raw>'
+                xml += self.raw
+                xml += '</raw>'
+            xml += '</payload></activity>'
         return xml
 
     def __str__(self):
@@ -133,4 +159,6 @@ class Activity:
             ", " + str(self.tags) + \
             ", " + str(self.to) + \
             ", " + str(self.url) + \
+            ", " + str(self.body) + \
+            ", " + str(self.raw) + \
             "]"
