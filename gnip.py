@@ -540,8 +540,7 @@ class Gnip:
             url_path = "/publishers/" + publisher_name + "/filters/" + name + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
-            rounded_time = self.round_time(corrected_time)
-            time_string = self.time_to_string(rounded_time)
+            time_string = self.time_to_string(corrected_time)
     
             url_path = "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
                 time_string + ".xml"
