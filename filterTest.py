@@ -3,7 +3,7 @@ import filter
 
 class FilterTestCase(unittest.TestCase):
     def setUp(self):
-        self.rules = [["actor", "me"], ["actor", "you"], ["actor", "bob"]]
+        self.rules = [dict(type="actor", value="me"), dict(type="actor", value="you"), dict(type="actor", value="bob")]
         self.filterName = "test"
         self.filterFullData = "true"
 
@@ -11,10 +11,10 @@ class FilterTestCase(unittest.TestCase):
         pass
 
     def testFromXmlWithoutPostUrl(self):
-        xml = '<filter name="test" fullData="true">' + \
-            '<rule type="actor" value="me"/>' + \
-            '<rule type="actor" value="you"/>' + \
-            '<rule type="actor" value="bob"/>' + \
+        xml = '<filter fullData="true" name="test">' + \
+            '<rule type="actor">me</rule>' + \
+            '<rule type="actor">you</rule>' + \
+            '<rule type="actor">bob</rule>' + \
             '</filter>'
         
         a_filter = filter.Filter()
@@ -26,11 +26,11 @@ class FilterTestCase(unittest.TestCase):
         self.assertTrue(a_filter.post_url is None)
         
     def testFromXmlWithPostUrl(self):
-        xml = '<filter name="test" fullData="true">' + \
-            '<postUrl>http://example.com</postUrl>' + \
-            '<rule type="actor" value="me"/>' + \
-            '<rule type="actor" value="you"/>' + \
-            '<rule type="actor" value="bob"/>' + \
+        xml = '<filter fullData="true" name="test">' + \
+            '<postURL>http://example.com</postURL>' + \
+            '<rule type="actor">me</rule>' + \
+            '<rule type="actor">you</rule>' + \
+            '<rule type="actor">bob</rule>' + \
             '</filter>'
         
         a_filter = filter.Filter()
@@ -42,21 +42,21 @@ class FilterTestCase(unittest.TestCase):
         self.assertEquals(a_filter.post_url, "http://example.com")
 
     def testToXmlWithoutPostUrl(self):
-        expected_xml = '<filter name="test" fullData="true">' + \
-            '<rule type="actor" value="me"/>' + \
-            '<rule type="actor" value="you"/>' + \
-            '<rule type="actor" value="bob"/>' + \
+        expected_xml = '<filter fullData="true" name="test">' + \
+            '<rule type="actor">me</rule>' + \
+            '<rule type="actor">you</rule>' + \
+            '<rule type="actor">bob</rule>' + \
             '</filter>'
             
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.assertEqual(a_filter.to_xml(), expected_xml)
         
     def testToXmlWithPostUrl(self):
-        expected_xml = '<filter name="test" fullData="true">' + \
-            '<postUrl>http://example.com</postUrl>' + \
-            '<rule type="actor" value="me"/>' + \
-            '<rule type="actor" value="you"/>' + \
-            '<rule type="actor" value="bob"/>' + \
+        expected_xml = '<filter fullData="true" name="test">' + \
+            '<postURL>http://example.com</postURL>' + \
+            '<rule type="actor">me</rule>' + \
+            '<rule type="actor">you</rule>' + \
+            '<rule type="actor">bob</rule>' + \
             '</filter>'
             
         a_filter = filter.Filter(name=self.filterName, post_url="http://example.com", rules=self.rules, full_data=self.filterFullData)

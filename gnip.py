@@ -8,7 +8,7 @@ import httplib2
 import gzip
 import StringIO
 import publisher
-from xml.dom.minidom import parseString
+from ElementTree import *
 
 class Gnip:
     """Common functionality between all Gnip classes
@@ -234,12 +234,14 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher_name + "/activity.xml"
+        url_path = "/my/publishers/" + publisher_name + "/activity.xml"
         return self.do_http_post(url_path, activity_xml)
 
-    def create_filter(self, publisher_name, filter):
+    def create_filter(self, publisher_scope, publisher_name, filter):
         """Create a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type filter Filter
@@ -250,11 +252,13 @@ class Gnip:
         passed in filter.
 
         """
-        return self.create_filter_from_xml(publisher_name, filter.to_xml())
+        return self.create_filter_from_xml(publisher_scope, publisher_name, filter.to_xml())
 
-    def create_filter_from_xml(self, publisher_name, data):
+    def create_filter_from_xml(self, publisher_scope, publisher_name, data):
         """Create a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type data string
@@ -266,12 +270,14 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher_name + "/filters.xml"
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
         return self.do_http_post(url_path, data)
 
-    def delete_filter(self, publisher_name, name):
+    def delete_filter(self, publisher_scope, publisher_name, name):
         """Delete a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type name string
@@ -283,12 +289,14 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher_name + "/filters/" + name + ".xml"
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
         return self.do_http_delete(url_path)
 
-    def find_filter(self, publisher_name, name):
+    def find_filter(self, publisher_scope, publisher_name, name):
         """Find a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type name string
@@ -300,16 +308,18 @@ class Gnip:
 
         """
 
-        xml = self.find_filter_xml(publisher_name, name)
+        xml = self.find_filter_xml(publisher_scope, publisher_name, name)
         if "<error>" in xml:
             return None
         the_filter = filter.Filter()
         the_filter.from_xml( xml)
         return the_filter
 
-    def find_filter_xml(self, publisher_name, name):
+    def find_filter_xml(self, publisher_scope, publisher_name, name):
         """Find a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type name string
@@ -321,12 +331,14 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher_name + "/filters/" + name + ".xml"
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
         return self.do_http_get(url_path)
 
-    def get_publisher_activities(self, publisher_name, date_and_time=None):
+    def get_publisher_activities(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher of the data
         @type date_and_time datetime
@@ -341,18 +353,21 @@ class Gnip:
         """
 
         xml = self.get_publisher_activities_xml(publisher_name, date_and_time)
-        root = parseString(xml).documentElement
+        root = fromstring(xml)
+        activity_nodes = root.findall("activity")
         activities = []
-        for node in root.childNodes:
-            if node.tagName == 'activity':
-                an_activity = activity.Activity()
-                an_activity.from_node(node)
-                activities.append(an_activity)
+        for node in activity_nodes:
+            activity_string = tostring(node)
+            an_activity = activity.Activity()
+            an_activity.from_xml(activity_string)
+            activities.append(an_activity)
         return activities
 
-    def get_publisher_activities_xml(self, publisher_name, date_and_time=None):
+    def get_publisher_activities_xml(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher of the data
         @type date_and_time datetime
@@ -367,12 +382,12 @@ class Gnip:
         """
 
         if None == date_and_time:
-            url_path = "/publishers/" + publisher_name + "/activity/current.xml"
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
     
-            url_path = "/publishers/" + publisher_name + \
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/activity/" + time_string + ".xml"
 
         xml = self.do_http_get(url_path)
@@ -380,9 +395,11 @@ class Gnip:
 
         return xml 
 
-    def get_filter_activities(self, publisher_name, name, date_and_time=None):
+    def get_filter_activities(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
         @param name The name of the filter to get
         @type publisher_name string
@@ -399,18 +416,21 @@ class Gnip:
         """
 
         xml = self.get_filter_activities_xml(publisher_name, name, date_and_time)
-        root = parseString(xml).documentElement
+        root = fromstring(xml)
+        activity_nodes = root.findall("activity")
         activities = []
-        for node in root.childNodes:
-            if node.tagName == 'activity':
-                an_activity = activity.Activity()
-                an_activity.from_node(node)
-                activities.append(an_activity)
+        for node in activity_nodes:
+            activity_string = tostring(node)
+            an_activity = activity.Activity()
+            an_activity.from_xml(activity_string)
+            activities.append(an_activity)
         return activities
 
-    def get_filter_activities_xml(self, publisher_name, name, date_and_time=None):
+    def get_filter_activities_xml(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
         @param name The name of the filter to get
         @type publisher_name string
@@ -427,19 +447,21 @@ class Gnip:
         """
 
         if None == date_and_time:
-            url_path = "/publishers/" + publisher_name + "/filters/" + name + "/activity/current.xml"
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
     
-            url_path = "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
                 time_string + ".xml"
 
         return self.do_http_get(url_path)
     
-    def get_publisher_notifications(self, publisher_name, date_and_time=None):
+    def get_publisher_notifications(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher of the data
         @type date_and_time datetime
@@ -453,19 +475,22 @@ class Gnip:
 
         """
 
-        xml = self.get_publisher_notifications_xml(publisher_name, date_and_time)
-        root = parseString(xml).documentElement
+        xml = self.get_publisher_notifications_xml(publisher_scope, publisher_name, date_and_time)
+        root = fromstring(xml)
+        activity_nodes = root.findall("activity")
         activities = []
-        for node in root.childNodes:
-            if node.tagName == 'activity':
-                an_activity = activity.Activity()
-                an_activity.from_node(node)
-                activities.append(an_activity)
+        for node in activity_nodes:
+            activity_string = tostring(node)
+            an_activity = activity.Activity()
+            an_activity.from_xml(activity_string)
+            activities.append(an_activity)
         return activities
 
-    def get_publisher_notifications_xml(self, publisher_name, date_and_time=None):
+    def get_publisher_notifications_xml(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher string
         @param publisher The publisher of the data
         @type date_and_time datetime
@@ -480,19 +505,21 @@ class Gnip:
         """
 
         if None == date_and_time:
-            url_path = "/publishers/" + publisher_name + "/notification/current.xml"
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
     
-            url_path = "/publishers/" + publisher_name + \
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/notification/" + time_string + ".xml"
 
         return self.do_http_get(url_path)
 
-    def get_filter_notifications(self, publisher_name, name, date_and_time=None):
+    def get_filter_notifications(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
         @param name The name of the filter to get
         @type publisher_name string
@@ -508,19 +535,22 @@ class Gnip:
 
         """
 
-        xml = self.get_filter_notifications_xml(publisher_name, name, date_and_time)
-        root = parseString(xml).documentElement
+        xml = self.get_filter_notifications_xml(publisher_scope, publisher_name, name, date_and_time)
+        root = fromstring(xml)
+        activity_nodes = root.findall("activity")
         activities = []
-        for node in root.childNodes:
-            if node.tagName == 'activity':
-                an_activity = activity.Activity()
-                an_activity.from_node(node)
-                activities.append(an_activity)
+        for node in activity_nodes:
+            activity_string = tostring(node)
+            an_activity = activity.Activity()
+            an_activity.from_xml(activity_string)
+            activities.append(an_activity)
         return activities
 
-    def get_filter_notifications_xml(self, publisher_name, name, date_and_time=None):
+    def get_filter_notifications_xml(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
         @param name The name of the filter to get
         @type publisher_name string
@@ -537,19 +567,21 @@ class Gnip:
         """
 
         if None == date_and_time:
-            url_path = "/publishers/" + publisher_name + "/filters/" + name + "/notification/current.xml"
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
     
-            url_path = "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
                 time_string + ".xml"
 
         return self.do_http_get(url_path)
 
-    def update_filter(self, publisher_name, filter_to_update):
+    def update_filter(self, publisher_scope, publisher_name, filter_to_update):
         """Update a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher of the filter
         @type filter_to_update Filter
@@ -561,11 +593,13 @@ class Gnip:
 
         """
 
-        return self.update_filter_from_xml(publisher_name, filter_to_update.name, filter_to_update.to_xml())
+        return self.update_filter_from_xml(publisher_scope, publisher_name, filter_to_update.name, filter_to_update.to_xml())
 
-    def update_filter_from_xml(self, publisher_name, name, data):
+    def update_filter_from_xml(self, publisher_scope, publisher_name, name, data):
         """Update a Gnip filter.
 
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
         @param name The name of the filter to update
         @type publisher_name string
@@ -579,7 +613,7 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + publisher_name + "/filters/" + name + ".xml"
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
         return self.do_http_put(url_path, data)
     
     def create_publisher(self, publisher):
@@ -594,7 +628,7 @@ class Gnip:
 
         """
 
-        url_path = "/publishers"
+        url_path = "/my/publishers"
         return self.do_http_post(url_path, publisher.to_xml())
     
     def create_publisher_from_xml(self, name, data):
@@ -611,12 +645,14 @@ class Gnip:
 
         """
 
-        url_path = "/publishers"
+        url_path = "/my/publishers"
         return self.do_http_post(url_path, data)
     
-    def get_publisher(self, name):
+    def get_publisher(self, scope, name):
         """Get a Gnip publisher.
 
+        @type scope string
+        @param scope The scope of the publisher (my, public or gnip)
         @type name string
         @param name Name of the publisher to get
         @return Publisher object based on response from the server
@@ -625,15 +661,17 @@ class Gnip:
 
         """
 
-        xml = self.get_publisher_xml(name)
+        xml = self.get_publisher_xml(scope, name)
         pub = publisher.Publisher()
         pub.from_xml(xml)
 
         return pub
     
-    def get_publisher_xml(self, name):
+    def get_publisher_xml(self, scope, name):
         """Get a Gnip publisher.
 
+        @type scope string
+        @param scope The scope of the publisher (my, public or gnip)
         @type name string
         @param name Name of the publisher to get
         @return string containing response from the server
@@ -642,7 +680,7 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + name + ".xml"
+        url_path = "/" + scope + "/publishers/" + name + ".xml"
         return self.do_http_get(url_path)
     
     def update_publisher(self, publisher):
@@ -675,7 +713,7 @@ class Gnip:
 
         """
 
-        url_path = "/publishers/" + name + ".xml"
+        url_path = "/my/publishers/" + name + ".xml"
         return self.do_http_put(url_path, data)
 
 if __name__=="__main__":

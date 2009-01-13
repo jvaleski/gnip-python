@@ -1,5 +1,5 @@
 import iso8601
-from xml.dom.minidom import parseString
+from ElementTree import *
 
 class Filter:
     """Gnip filter container class
@@ -8,14 +8,14 @@ class Filter:
 
     """
     
-    def __init__(self, name="", post_url=None, rules=[], full_data="true"):
+    def __init__(self, name="", full_data="true", post_url=None, rules=[]):
         """Initialize the class.
 
         @type name string
         @param name The name of the filter
         @type post_url string
         @param post_url The URL to post filter activities to
-        @type rules list of strings of form (Type, Value)
+        @type rules List of dict(type, value)
         @param rules The rules for the collection
         @type full_data string
         @type full_data Whether or not this filter is for full data
@@ -38,15 +38,30 @@ class Filter:
 
         """
 
-        xml = '<filter name="' + self.name + '" fullData="' + self.full_data + '">'
+        filter_node = Element("filter")
+        
+        post_url_node = None
         if self.post_url is not None:
-            xml += '<postUrl>' + self.post_url + '</postUrl>'
+            post_url_node = Element("postURL")
+            post_url_node.text = self.post_url
 
-        for rule in self.rules:
-            xml += '<rule type="' + rule[0] + '" value="' + rule[1] + '"/>' 
-        xml += '</filter>'
+        rule_nodes = None
+        if self.rules is not None and len(self.rules) > 0:
+            rule_nodes = []
+            for rule in self.rules:
+                rule_node = Element("rule")
+                rule_node.text = rule["value"]
+                rule_node.set("type", rule["type"]) 
+                rule_nodes.append(rule_node)
+                
+        filter_node.set("name", self.name)
+        filter_node.set("fullData", self.full_data)
+        if post_url_node is not None:
+            filter_node.append(post_url_node)
+        for rule_node in rule_nodes:
+            filter_node.append(rule_node)
 
-        return xml
+        return tostring(filter_node)
     
     def from_xml(self, xml):     
         """ Populate object from XML
@@ -55,25 +70,28 @@ class Filter:
         @param xml The xml representation of a filter
 
         Sets all of the member variables to new values, based on the
-        passed in XML. XML should be of the form:
-        <filter name="test">
-            <rule type="actor" value="me"/>
-            <rule type="actor" value="you"/>
-            <rule type="actor" value="bob"/>
-        </filter>
-
+        passed in XML.
+        
         """   
 
-        root = parseString(xml).documentElement
-        self.name = root.getAttribute("name")
-        self.full_data = root.getAttribute("fullData")
+        # Pull out all of the data from the xml
+        filter_node = fromstring(xml)
+        post_url_node = filter_node.find("postURL")
+        rule_nodes = filter_node.findall("rule")
         
+        # set local variables
+        self.name = filter_node.get("name")
+        self.full_data = filter_node.get("fullData")
+        
+        if post_url_node is not None:
+            self.post_url = post_url_node.text
+        else:
+            self.post_url = None
+
         self.rules = []
-        for node in root.childNodes:
-            if node.tagName == 'postUrl':
-                self.post_url = node.childNodes[0].nodeValue
-            elif node.tagName == 'rule':
-                self.rules.append([node.getAttribute('type'), node.getAttribute('value')])
+        for rule_node in rule_nodes:
+            rule = dict(type=rule_node.get("type"), value=rule_node.text)
+            self.rules.append(rule)
 
     def __str__(self):
-        return "[" + self.name + ", " + self.post_url + ", " + str(self.rules) + "]"
+        return "[" + self.name + ", " + self.postURL + ", " + str(self.rules) + "]"
