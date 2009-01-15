@@ -10,7 +10,7 @@ import StringIO
 import publisher
 from ElementTree import *
 
-class Gnip:
+class Gnip(object):
     """Common functionality between all Gnip classes
 
     This class provides basic functionality help for all Gnip classes.

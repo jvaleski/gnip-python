@@ -4,6 +4,9 @@ from string import count
 from xml.dom.minidom import parseString
 import time
 import random
+import place
+import payload
+import xml_objects
 
 # Be sure to fill these in if you want to run the test cases
 TEST_USERNAME = ""
@@ -43,28 +46,43 @@ class GnipTestCase(unittest.TestCase):
     def testPublishXml(self):
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
-             '<at>2008-07-02T11:16:16+00:00</at><action>upload</action><rule type="actor">sally</rule>' + \
-             '<payload><actor>sally</actor><destURL>http://example.com</destURL><regardingURL>' + randVal + \
-             '</regardingURL><source>web</source><tag>trains</tag><tag>planes</tag><tag>automobile</tag>' + \
-             '<raw>raw</raw></payload></activity></activities>'
+             '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
+             '<URL>http://example.com</URL><source>web</source><source>website</source>' + \
+             '<place><point>1.0 -2.0</point><elev>3.0</elev><floor>4</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<place><point>11.0 -12.0</point><elev>13.0</elev><floor>14</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<actor>bob</actor><actor>you</actor><destinationURL>http://example.com</destinationURL>' + \
+             '<destinationURL>http://example2.com</destinationURL><tag>trains</tag><tag>planes</tag>' + \
+             '<to>you</to><to>fred</to><regardingURL>http://regarding.com</regardingURL>' + \
+             '<regardingURL>http://regarding2.com</regardingURL>' + \
+             '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
+             '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
         result = self.gnip.publish_xml(TEST_PUBLISHER, xml)
         self.assertEqual(result, self.success)
 
     def testPublishActivities(self):
         randVal = str(random.randint(1, 99999999))
-        an_activity = activity.Activity(action=dict(value=randVal), 
-                                        rule=dict(type="actor", value="bob"),
-                                        actor=dict(meta_url="", value="bob"),
-                                        title=dict(value="title"),
-                                        body=dict(value="body"),
-                                        dest_url=dict(meta_url="", value="destURL"),
-                                        source=dict(value="source"),
-                                        to=dict(meta_url="", value="to"),
-                                        geo=dict(value="geo"),
-                                        regarding_url=dict(meta_url="", value="regarding"),
-                                        media_urls=[dict(meta_url="", value="mediaURL1"), dict(meta_url="", value="mediaURL2")],
-                                        tags=[dict(meta_url="", value="trains"), dict(meta_url="", value="planes")],
-                                        raw=dict(value="raw"))        
+        a_place1 = place.Place(xml_objects.Point(1.0, -2.0), 3, 4, "city", "Boulder", "center")
+
+        a_place2 = place.Place(xml_objects.Point(11.0, -12.0), 13, 14, "city", "Boulder", "center")
+
+        a_payload = payload.Payload(title="Title",
+                                    body="Body",
+                                    media_urls=[xml_objects.URL(value="http://media1.com", meta_url="http://media1.com/meta"), xml_objects.URL(value="http://media2.com", meta_url="http://media2.com/meta")],
+                                    raw="raw")
+
+        an_activity = activity.Activity(action="update",
+                                        activity_id=randVal,
+                                        url="http://example.com",
+                                        sources=["web", "website"],
+                                        places=[a_place1, a_place2],
+                                        actors=[xml_objects.Actor(value="bob", meta_url="http://bob.com", uid="12345"), xml_objects.Actor(value="me", meta_url="http://me.com", uid="123456")],
+                                        destination_urls=[xml_objects.URL(value="http://destination1.com", meta_url="http://destination1.com/meta"), xml_objects.URL(value="http://destination2.com", meta_url="http://destination2.com/meta")],
+                                        tags=[xml_objects.Tag(meta_url="http://tag1.com", value="tag1"), xml_objects.Tag(meta_url="http://tag2.com", value="tag2")],
+                                        tos=[xml_objects.To(value="you", meta_url="http://you.com"), xml_objects.To(value="fred", meta_url="http://fred.com")],
+                                        regarding_urls=[xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com"), xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com")],
+                                        payload=a_payload)
         an_activity.set_at_from_string("2008-07-02T11:16:16+00:00")
         result = self.gnip.publish_activities(TEST_PUBLISHER, [an_activity])
         self.assertEqual(result, self.success)
@@ -72,25 +90,41 @@ class GnipTestCase(unittest.TestCase):
     def testGetPublisherNotifications(self):
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
-             '<at>2008-07-02T11:16:16+00:00</at><action>upload</action><rule type="actor">' + randVal + '</rule>' + \
-             '<payload><actor>sally</actor><destURL>http://example.com</destURL><regardingURL>' + randVal + \
-             '</regardingURL><source>web</source><tag>trains</tag><tag>planes</tag><tag>automobile</tag>' + \
-             '<raw>raw</raw></payload></activity></activities>'
+             '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
+             '<URL>http://example.com</URL><source>web</source><source>website</source>' + \
+             '<place><point>1.0 -2.0</point><elev>3.0</elev><floor>4</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<place><point>11.0 -12.0</point><elev>13.0</elev><floor>14</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<actor>bob</actor><actor>you</actor><destinationURL>http://example.com</destinationURL>' + \
+             '<destinationURL>http://example2.com</destinationURL><tag>trains</tag><tag>planes</tag>' + \
+             '<to>you</to><to>fred</to><regardingURL>http://regarding.com</regardingURL>' + \
+             '<regardingURL>http://regarding2.com</regardingURL>' + \
+             '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
+             '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
         self.gnip.publish_xml(TEST_PUBLISHER, xml)
 
         resultActivities = self.gnip.get_publisher_notifications(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
         numMatches = 0
         for singleActivity in resultActivities:
-            numMatches += count(singleActivity.rule["value"], randVal)
+            numMatches += count(singleActivity.activity_id, randVal)
         self.assert_(0 != numMatches)
 
     def testGetPublisherNotificationsXml(self):
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
-             '<at>2008-07-02T11:16:16+00:00</at><action>' + randVal + '</action><rule type="actor">sally</rule>' + \
-             '<payload><actor>sally</actor><destURL>http://example.com</destURL><regardingURL>' + randVal + \
-             '</regardingURL><source>web</source><tag>trains</tag><tag>planes</tag><tag>automobile</tag>' + \
-             '<raw>raw</raw></payload></activity></activities>'
+             '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
+             '<URL>http://example.com</URL><source>web</source><source>website</source>' + \
+             '<place><point>1.0 -2.0</point><elev>3.0</elev><floor>4</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<place><point>11.0 -12.0</point><elev>13.0</elev><floor>14</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<actor>bob</actor><actor>you</actor><destinationURL>http://example.com</destinationURL>' + \
+             '<destinationURL>http://example2.com</destinationURL><tag>trains</tag><tag>planes</tag>' + \
+             '<to>you</to><to>fred</to><regardingURL>http://regarding.com</regardingURL>' + \
+             '<regardingURL>http://regarding2.com</regardingURL>' + \
+             '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
+             '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
         self.gnip.publish_xml(TEST_PUBLISHER, xml)
 
         resultXml = self.gnip.get_publisher_notifications_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
@@ -101,17 +135,25 @@ class GnipTestCase(unittest.TestCase):
         self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
-             '<at>2008-07-02T11:16:16+00:00</at><action>' + randVal + '</action><rule type="actor">bob</rule>' + \
-             '<payload><actor>bob</actor><destURL>http://example.com</destURL><regardingURL>' + randVal + \
-             '</regardingURL><source>web</source><tag>trains</tag><tag>planes</tag><tag>automobile</tag>' + \
-             '<raw>raw</raw></payload></activity></activities>'
+             '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
+             '<URL>http://example.com</URL><source>web</source><source>website</source>' + \
+             '<place><point>1.0 -2.0</point><elev>3.0</elev><floor>4</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<place><point>11.0 -12.0</point><elev>13.0</elev><floor>14</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<actor>bob</actor><actor>you</actor><destinationURL>http://example.com</destinationURL>' + \
+             '<destinationURL>http://example2.com</destinationURL><tag>trains</tag><tag>planes</tag>' + \
+             '<to>you</to><to>fred</to><regardingURL>http://regarding.com</regardingURL>' + \
+             '<regardingURL>http://regarding2.com</regardingURL>' + \
+             '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
+             '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
         self.gnip.publish_xml(TEST_PUBLISHER, xml)
 
         resultActivities = self.gnip.get_filter_notifications(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
 
         numMatches = 0
         for singleActivity in resultActivities:
-            numMatches += count(singleActivity.action["value"], randVal)
+            numMatches += count(singleActivity.activity_id, randVal)
         self.assert_(0 != numMatches)
 
     def testGetFilterNotificationsXml(self):
@@ -119,10 +161,18 @@ class GnipTestCase(unittest.TestCase):
         self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
-             '<at>2008-07-02T11:16:16+00:00</at><action>' + randVal + '</action><rule type="actor">bob</rule>' + \
-             '<payload><actor>bob</actor><destURL>http://example.com</destURL><regardingURL>' + randVal + \
-             '</regardingURL><source>web</source><tag>trains</tag><tag>planes</tag><tag>automobile</tag>' + \
-             '<raw>raw</raw></payload></activity></activities>'
+             '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
+             '<URL>http://example.com</URL><source>web</source><source>website</source>' + \
+             '<place><point>1.0 -2.0</point><elev>3.0</elev><floor>4</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<place><point>11.0 -12.0</point><elev>13.0</elev><floor>14</floor><featuretypetag>city</featuretypetag>' + \
+             '<featurename>Boulder</featurename><relationshiptag>center</relationshiptag></place>' + \
+             '<actor>bob</actor><actor>you</actor><destinationURL>http://example.com</destinationURL>' + \
+             '<destinationURL>http://example2.com</destinationURL><tag>trains</tag><tag>planes</tag>' + \
+             '<to>you</to><to>fred</to><regardingURL>http://regarding.com</regardingURL>' + \
+             '<regardingURL>http://regarding2.com</regardingURL>' + \
+             '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
+             '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
         self.gnip.publish_xml(TEST_PUBLISHER, xml)
 
         resultXml = self.gnip.get_filter_notifications_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)

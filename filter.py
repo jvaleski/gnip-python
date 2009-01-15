@@ -1,7 +1,7 @@
 import iso8601
 from ElementTree import *
 
-class Filter:
+class Filter(object):
     """Gnip filter container class
 
     This class provides an abstraction from the Gnip filter XML.

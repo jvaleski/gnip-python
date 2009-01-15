@@ -1,6 +1,6 @@
 from xml.dom.minidom import parseString
 
-class Publisher:
+class Publisher(object):
     """Gnip publisher container class
 
     This class provides an abstraction from the Gnip publisher XML.
