@@ -1,11 +1,51 @@
-= Gnip Client
+== Gnip Python Client ==
 
 This library provides a Python API for accessing
 Gnip (http://gnipcentral.com) web services.  There are two basic
 roles for using Gnip: subscribers and publishers.  This library
 provides a single interface for both roles.
 
-== Consumer
+== Required Libraries ==
+
+These 3rd party libraries are required by the Gnip Client:
+
+- iso8601 - http://pypi.python.org/pypi/iso8601
+- pyjavaproperties - http://pypi.python.org/pypi/pyjavaproperties/0.3
+
+The easiest installation method is to use easy_install which offers all
+of the above modules.  For more information, see:
+
+  http://peak.telecommunity.com/DevCenter/EasyInstall
+
+== Install ==
+
+  $> sudo python setup.py install
+
+== Running the Client Library Tests ==
+
+If you have downloaded the complete Gnip Client library source, the unit tests
+will be in the test/ directory.  Before running the tests, you will need to 
+configure the username, password, and connection information used to connect
+to a Gnip server.  To do this, add the ./test/gnip-account.properties file 
+that contains the following properties:
+
+gnip.username=your-gnip-username@yourcompany.com
+gnip.password=your-gnip-password
+gnip.test.publisher=your-test-publisher
+
+Note, for the tests to pass, you must reference a Gnip test publisher that
+exists and that you own and thus can be used for publishing activities 
+from a unit test. 
+
+For more information about creating a Gnip Publisher, see:
+
+  http://prod.gnipcentral.com
+
+To run the tests, type:
+
+  $> python regression.py
+
+== Consumer ==
 
 === Example 1: Retrieve all recent activities at a publisher
 
@@ -82,22 +122,6 @@ published in it's activity stream.
         "http://mydomain.com/joe/my-new-blog-post");
     gnip.publish_activities(my_publisher, [activity])
 
-== Additional notes
-
-There are test cases included in the files "*Test.py". The test
-cases also provide examples of usage. Note that you'll need to fill in the
-information for the TEST_* constants at the top of the class, in order for
-the test cases to work properly.
-
-Docstrings are included for each class and method.
-
-== Required libraries
-
-DAVClient - http://pypi.python.org/pypi/davclient
- Note: please use the slightly modified version that is included
-
-iso8601 - http://pypi.python.org/pypi/iso8601
-
 == Contributing
 
 Contributions to this library are welcome.
@@ -112,4 +136,5 @@ discuss any changes you are making on the mailing list to get feed
 back from the other users.  Once you are ready to publish your changes
 you can send them to the mailing list or, if you are using GitHub,
 send a pull request to the owner of the main repositiory.
+
 

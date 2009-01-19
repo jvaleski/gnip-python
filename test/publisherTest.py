@@ -1,5 +1,7 @@
+import sys
+sys.path.append("../")
+from gnip import publisher
 import unittest
-import publisher
 
 class PublisherTestCase(unittest.TestCase):
     def setUp(self):

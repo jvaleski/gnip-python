@@ -1,5 +1,7 @@
+import sys
+sys.path.append("../")
+from gnip import filter
 import unittest
-import filter
 
 class FilterTestCase(unittest.TestCase):
     def setUp(self):

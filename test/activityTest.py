@@ -1,15 +1,23 @@
+import sys
+sys.path.append("../")
+from gnip import activity
+from gnip import payload
+from gnip import place
+from gnip.xml_objects import *
 import unittest
 import datetime
-import activity
-import payload
-from xml_objects import *
 from xml.dom.minidom import parseString
-import place
+import logging
 
 class ActivityTestCase(unittest.TestCase):
     def setUp(self):
-        self.xml_without_payload = open("activity_without_payload.xml").read()
-        self.xml_with_payload = open("activity_with_payload.xml").read()
+        logging.getLogger('').setLevel(logging.INFO)
+        index = int(__file__.rfind("/"))
+        basedir = __file__[0:index]
+        logging.info("Loading XML files from: " + basedir)
+        
+        self.xml_without_payload = open(basedir + "/activity_without_payload.xml").read()
+        self.xml_with_payload = open(basedir + "/activity_with_payload.xml").read()
         
         self.testTimeStringValue = "2001-01-01T01:01:00.000Z"
         self.testActionValue = "the_action"

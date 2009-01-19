@@ -4,20 +4,19 @@ import datetime
 import davclient
 import iso8601
 import time
-import httplib2
 import gzip
 import StringIO
 import publisher
 from ElementTree import *
 
-class Gnip(object):
+class Gnip:
     """Common functionality between all Gnip classes
 
     This class provides basic functionality help for all Gnip classes.
 
     """
 
-    def __init__(self, username, password, gnip_server="s.gnipcentral.com"):
+    def __init__(self, username, password, gnip_server="https://prod.gnipcentral.com"):
         """Initialize the class.
 
         @type username string
@@ -33,7 +32,7 @@ class Gnip(object):
         """
         
         # Determine base Gnip URL
-        self.base_url = "https://" + gnip_server
+        self.base_url = gnip_server
         
         # Configure authentication
         self.client = davclient.DAVClient(self.base_url)

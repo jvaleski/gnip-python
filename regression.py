@@ -17,18 +17,24 @@ __date__ = "$Date: 2004/05/05 21:57:19 $"
 __copyright__ = "Copyright (c) 2001 Mark Pilgrim"
 __license__ = "Python"
 
-import sys, os, re, unittest
-sys.path.append("../..")
-sys.path.append("..")
+import sys, os, re, unittest, logging
+sys.path.append(".")
+sys.path.append("./test")
 
 def regressionTest():
-    path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    logging.getLogger('').setLevel(logging.INFO)
+    path = os.path.abspath(os.path.dirname(sys.argv[0])) + "/test"
+    logging.info("Searching for tests in " + path)
     files = os.listdir(path)
+    
     test = re.compile("test\.py$", re.IGNORECASE)
     files = filter(test.search, files)
+    print files
+    
     filenameToModuleName = lambda f: os.path.splitext(f)[0]
     moduleNames = map(filenameToModuleName, files)
     modules = map(__import__, moduleNames)
+    
     load = unittest.defaultTestLoader.loadTestsFromModule
     return unittest.TestSuite(map(load, modules))
 

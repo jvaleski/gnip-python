@@ -1,29 +1,33 @@
-import unittest
+import sys
+sys.path.append("../")
+
 from gnip import *
+from gnip import xml_objects
+
 from string import count
 from xml.dom.minidom import parseString
+import unittest
 import time
 import random
-import place
-import payload
-import xml_objects
-
-# Be sure to fill these in if you want to run the test cases
-TEST_USERNAME = ""
-TEST_PASSWORD = ""
-TEST_PUBLISHER = ""
-TEST_PUBLISHER_SCOPE = "my"
-TEST_SERVER = "review.gnipcentral.com"
+from pyjavaproperties import Properties
 
 class GnipTestCase(unittest.TestCase):
-    
+        
     def __init__(self,*args):
-        unittest.TestCase.__init__(self,*args)
-        self.gnip = Gnip(TEST_USERNAME, TEST_PASSWORD, TEST_SERVER)
+        unittest.TestCase.__init__(self, *args)
+        index = int(__file__.rfind("/"))
+        basedir = __file__[0:index]
+
+        p = Properties()
+        p.load(open(basedir + '/gnip-account.properties'))
+        p.load(open(basedir + '/test.properties'))
+        self.gnip = Gnip(p['gnip.username'], p['gnip.password'], p['gnip.server'])
+        self.testpublisher = p['gnip.test.publisher']
+        self.testpublisherscope = p['gnip.test.publisher.scope']
     
     def setUp(self):
-        self.filterXml = '<?xml version="1.0" encoding="UTF-8"' +\
-            ' standalone="yes"?>' +\
+        self.filterXml = \
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +\
             '<filter fullData="true" name="test">' + \
             '<rule type="actor">me</rule>' + \
             '<rule type="actor">you</rule>' + \
@@ -35,7 +39,7 @@ class GnipTestCase(unittest.TestCase):
         self.success = '<result>Success</result>'
 
     def tearDown(self):
-        self.gnip.delete_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        self.gnip.delete_filter(self.testpublisherscope, self.testpublisher, self.filterName)
 
     def testCompressUncompress(self):
         string = "BlahBlah"
@@ -58,7 +62,7 @@ class GnipTestCase(unittest.TestCase):
              '<regardingURL>http://regarding2.com</regardingURL>' + \
              '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
              '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
-        result = self.gnip.publish_xml(TEST_PUBLISHER, xml)
+        result = self.gnip.publish_xml(self.testpublisher, xml)
         self.assertEqual(result, self.success)
 
     def testPublishActivities(self):
@@ -84,7 +88,7 @@ class GnipTestCase(unittest.TestCase):
                                         regarding_urls=[xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com"), xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com")],
                                         payload=a_payload)
         an_activity.set_at_from_string("2008-07-02T11:16:16+00:00")
-        result = self.gnip.publish_activities(TEST_PUBLISHER, [an_activity])
+        result = self.gnip.publish_activities(self.testpublisher, [an_activity])
         self.assertEqual(result, self.success)
 
     def testGetPublisherNotifications(self):
@@ -102,9 +106,9 @@ class GnipTestCase(unittest.TestCase):
              '<regardingURL>http://regarding2.com</regardingURL>' + \
              '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
              '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
-        self.gnip.publish_xml(TEST_PUBLISHER, xml)
+        self.gnip.publish_xml(self.testpublisher, xml)
 
-        resultActivities = self.gnip.get_publisher_notifications(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
+        resultActivities = self.gnip.get_publisher_notifications(self.testpublisherscope, self.testpublisher)
         numMatches = 0
         for singleActivity in resultActivities:
             numMatches += count(singleActivity.activity_id, randVal)
@@ -125,14 +129,14 @@ class GnipTestCase(unittest.TestCase):
              '<regardingURL>http://regarding2.com</regardingURL>' + \
              '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
              '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
-        self.gnip.publish_xml(TEST_PUBLISHER, xml)
+        self.gnip.publish_xml(self.testpublisher, xml)
 
-        resultXml = self.gnip.get_publisher_notifications_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
+        resultXml = self.gnip.get_publisher_notifications_xml(self.testpublisherscope, self.testpublisher)
         self.assert_(randVal in resultXml)
 
     def testGetFilterNotifications(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
              '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
@@ -147,9 +151,9 @@ class GnipTestCase(unittest.TestCase):
              '<regardingURL>http://regarding2.com</regardingURL>' + \
              '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
              '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
-        self.gnip.publish_xml(TEST_PUBLISHER, xml)
+        self.gnip.publish_xml(self.testpublisher, xml)
 
-        resultActivities = self.gnip.get_filter_notifications(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        resultActivities = self.gnip.get_filter_notifications(self.testpublisherscope, self.testpublisher, self.filterName)
 
         numMatches = 0
         for singleActivity in resultActivities:
@@ -158,7 +162,7 @@ class GnipTestCase(unittest.TestCase):
 
     def testGetFilterNotificationsXml(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         randVal = str(random.randint(1, 99999999))
         xml = '<?xml version=\'1.0\' encoding=\'utf-8\'?><activities><activity>' + \
              '<at>2008-07-02T11:16:16+00:00</at><action>update</action><activityID>' + randVal + '</activityID>' + \
@@ -173,92 +177,92 @@ class GnipTestCase(unittest.TestCase):
              '<regardingURL>http://regarding2.com</regardingURL>' + \
              '<payload><title>Title</title><body>Body</body><mediaURL>http://media.com</mediaURL>' + \
              '<mediaURL>http://media2.com</mediaURL><raw>raw</raw></payload></activity></activities>'
-        self.gnip.publish_xml(TEST_PUBLISHER, xml)
+        self.gnip.publish_xml(self.testpublisher, xml)
 
-        resultXml = self.gnip.get_filter_notifications_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        resultXml = self.gnip.get_filter_notifications_xml(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assert_(randVal in resultXml)
         
     def testUpdateFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         a_second_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         a_second_filter.rules.append(dict(type="actor", value="joe"))
-        result = self.gnip.update_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_second_filter)
+        result = self.gnip.update_filter(self.testpublisherscope, self.testpublisher, a_second_filter)
         self.assertEqual(result, self.success)
 
     def testUpdateFilterFromXml(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         updatedXml = '<filter name="test" fullData="true">' + \
             '<rule type="actor">me</rule>' + \
             '<rule type="actor">you</rule>' + \
             '<rule type="actor">bob</rule>' + \
             '<rule type="actor">joe</rule>' + \
             '</filter>'
-        result = self.gnip.update_filter_from_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter.name, updatedXml)
+        result = self.gnip.update_filter_from_xml(self.testpublisherscope, self.testpublisher, a_filter.name, updatedXml)
         self.assertEqual(result, self.success)
 
     def testCreateFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
-        result = self.gnip.find_filter_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        result = self.gnip.find_filter_xml(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assert_('bob' in result)
 
     def testDeleteFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
-        result = self.gnip.delete_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        result = self.gnip.delete_filter(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assertEqual(result, self.success)
 
     def testFindFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
-        resultfilter = self.gnip.find_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        resultfilter = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assertEqual(resultfilter.name, a_filter.name)
 
     def testFindFilterXml(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        self.gnip.create_filter(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, a_filter)
-        resultXml = self.gnip.find_filter_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER, self.filterName)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        resultXml = self.gnip.find_filter_xml(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assert_("bob" in resultXml)
         
     def testGetPublisher(self):
-        pub = self.gnip.get_publisher(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
-        self.assertEquals(TEST_PUBLISHER, pub.name)
+        pub = self.gnip.get_publisher(self.testpublisherscope, self.testpublisher)
+        self.assertEquals(self.testpublisher, pub.name)
         
     def testGetPublisherXml(self):
-        resultXml = self.gnip.get_publisher_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
-        self.assert_(TEST_PUBLISHER in resultXml)
+        resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher)
+        self.assert_(self.testpublisher in resultXml)
 
     def testCreatePublisher(self):
         randVal = str(random.randint(1, 99999999))
-        pub = publisher.Publisher(TEST_PUBLISHER + randVal, ['actor', 'tag'])
+        pub = publisher.Publisher(self.testpublisher + randVal, ['actor', 'tag'])
         self.gnip.create_publisher(pub)
-        resultXml = self.gnip.get_publisher_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER + randVal)
-        self.assert_(TEST_PUBLISHER + randVal in resultXml)
+        resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher + randVal)
+        self.assert_(self.testpublisher + randVal in resultXml)
         
     def testCreatePublisherFromXml(self):
         randVal = str(random.randint(1, 99999999))
-        self.publisherXml = '<publisher name="' + TEST_PUBLISHER + randVal + '">' + \
+        self.publisherXml = '<publisher name="' + self.testpublisher + randVal + '">' + \
             '<supportedRuleTypes><type>actor</type><type>tag</type>' + \
             '</supportedRuleTypes></publisher>'
 
-        resultXml = self.gnip.create_publisher_from_xml(TEST_PUBLISHER, self.publisherXml)
-        resultXml = self.gnip.get_publisher_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER + randVal)
-        self.assert_(TEST_PUBLISHER + randVal in resultXml)
+        resultXml = self.gnip.create_publisher_from_xml(self.testpublisher, self.publisherXml)
+        resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher + randVal)
+        self.assert_(self.testpublisher + randVal in resultXml)
         
     def testUpdatePublisher(self):
-        pub = publisher.Publisher(TEST_PUBLISHER, ['actor', 'tag'])
+        pub = publisher.Publisher(self.testpublisher, ['actor', 'tag'])
         self.gnip.update_publisher(pub)
-        resultXml = self.gnip.get_publisher_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
+        resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher)
         self.assert_('<type>tag</type>' in resultXml)
         
     def testUpdatePublisherFromXml(self):
-        self.publisherXml = '<publisher name="' + TEST_PUBLISHER + '">' + \
+        self.publisherXml = '<publisher name="' + self.testpublisher + '">' + \
             '<supportedRuleTypes><type>actor</type>' + \
             '</supportedRuleTypes></publisher>'
-        resultXml = self.gnip.update_publisher_from_xml(TEST_PUBLISHER, self.publisherXml)
-        resultXml = self.gnip.get_publisher_xml(TEST_PUBLISHER_SCOPE, TEST_PUBLISHER)
+        resultXml = self.gnip.update_publisher_from_xml(self.testpublisher, self.publisherXml)
+        resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher)
         self.assert_('<type>tag</type>' not in resultXml)
 
 if __name__ == '__main__':
