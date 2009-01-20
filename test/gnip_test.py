@@ -205,12 +205,21 @@ class GnipTestCase(unittest.TestCase):
     def testAddSingleRuleUpdateToFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
-        ruleXml = '<rule type="actor">jud</rule>'
-        result = self.gnip.add_rule_to_filter(self.testpublisherscope, self.testpublisher, a_filter.name, ruleXml)
+        expected_rule = Rule(type="actor", value="jud")
+        result = self.gnip.add_rule_to_filter(self.testpublisherscope, self.testpublisher, a_filter.name, expected_rule)
         self.assertEqual(result, self.success)
         a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name)
-        expected_rule = Rule(type="actor", value="jud")
         self.assertTrue(expected_rule in a_filter_with_new_rule.rules)
+
+    def testBatchUpdateOfFilterRules(self):
+        a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        new_rules = [Rule("actor","jud"), Rule("actor","eddie"), Rule("actor","alex")]
+        result = self.gnip.add_rules_to_filter(self.testpublisherscope, self.testpublisher, a_filter.name, new_rules)
+        self.assertEqual(result, self.success)
+        a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name)
+        for new_rule in new_rules:
+            self.assertTrue(new_rule in a_filter_with_new_rule.rules)
 
     def testCreateFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)

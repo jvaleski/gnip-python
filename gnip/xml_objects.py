@@ -1,3 +1,4 @@
+from elementtree.ElementTree import *
 
 class URL(object):
     """Gnip URL container class"""
@@ -5,7 +6,7 @@ class URL(object):
     def __init__(self, value=None, meta_url=None):
         self.value = value
         self.meta_url = meta_url
-        
+
     def __str__(self):
         return "[" + str(self.value) + ", " + str(self.meta_url) + "]"
 
@@ -27,7 +28,7 @@ class Actor(object):
         self.meta_url = meta_url
 
     def __str__(self):
-        return "[" + str(self.value) + ", " + str(self.uid) + ", " + str(self.meta_url) + "]"        
+        return "[" + str(self.value) + ", " + str(self.uid) + ", " + str(self.meta_url) + "]"
 
 class Tag(object):
     """Gnip Tag container class"""
@@ -46,7 +47,7 @@ class Tag(object):
                 ret = cmp(self.meta_url, other.meta_url)
         else:
             ret = 1
-        return ret   
+        return ret
 
 class To(object):
     """Gnip To container class"""
@@ -91,7 +92,7 @@ class Point(object):
                 ret = 0
         else:
             ret = 1
-        return ret   
+        return ret
 
 class Rule(object):
     """Gnip Rule container class"""
@@ -103,7 +104,7 @@ class Rule(object):
     def __str__(self):
         return "[" + str(self.type) + ", " + str(self.value) + "]"
 
-    def __cmp__(self, other):        
+    def __cmp__(self, other):
         if isinstance(other, Rule):
             ret = cmp(self.type, other.type)
             if(ret == 0):
@@ -111,3 +112,9 @@ class Rule(object):
         else:
             ret = 1
         return ret
+
+    def to_xml(self):
+        rule_node = Element("rule")
+        rule_node.text = self.value
+        rule_node.set("type", self.type)
+        return tostring(rule_node)

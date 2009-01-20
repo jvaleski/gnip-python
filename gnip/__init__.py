@@ -281,7 +281,7 @@ class Gnip:
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
         return self.do_http_post(url_path, data)
 
-    def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule_xml):
+    def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Add a rule to a Gnip filter.
 
         @type publisher_scope string
@@ -291,7 +291,7 @@ class Gnip:
         @type data string
         @param filter_name The filter to update
         @type data string
-        @param rule_xml XML formatted to Gnip Rule schema
+        @param rule a new Rule to add
         @return string containing response from the server
 
         Add new rule to a filter on the Gnip server, based on the
@@ -300,7 +300,32 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
-        return self.do_http_post(url_path, rule_xml)
+        return self.do_http_post(url_path, rule.to_xml())
+
+    def add_rules_to_filter(self, publisher_scope, publisher_name, filter_name, rules):
+        """Add rules to a Gnip filter.
+
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @type publisher_name string
+        @param publisher_name The publisher of the filter to update
+        @type data string
+        @param filter_name The filter to update
+        @type data string
+        @param rules a new Rules to add
+        @return string containing response from the server
+
+        Add rules to a filter on the Gnip server, based on the
+        passed in parameters.
+
+        """
+
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
+        rules_xml = "<rules>"
+        for rule in rules:
+            rules_xml+=rule.to_xml()
+        rules_xml+="</rules>"
+        return self.do_http_post(url_path, rules_xml)
 
     def delete_filter(self, publisher_scope, publisher_name, name):
         """Delete a Gnip filter.
