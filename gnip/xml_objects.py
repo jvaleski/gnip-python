@@ -1,4 +1,5 @@
 from elementtree.ElementTree import *
+import urllib
 
 class URL(object):
     """Gnip URL container class"""
@@ -101,6 +102,15 @@ class Rule(object):
         self.type = type
         self.value = value
 
+    def to_delete_query_string(self):
+        return urllib.urlencode([("type",self.type),("value",self.value)])
+
+    def to_xml(self):
+        rule_node = Element("rule")
+        rule_node.text = self.value
+        rule_node.set("type", self.type)
+        return tostring(rule_node)
+
     def __str__(self):
         return "[" + str(self.type) + ", " + str(self.value) + "]"
 
@@ -112,9 +122,3 @@ class Rule(object):
         else:
             ret = 1
         return ret
-
-    def to_xml(self):
-        rule_node = Element("rule")
-        rule_node.text = self.value
-        rule_node.set("type", self.type)
-        return tostring(rule_node)

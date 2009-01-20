@@ -1,4 +1,5 @@
 import sys
+import urllib
 sys.path.append("../")
 from gnip.xml_objects import *
 import unittest
@@ -38,6 +39,10 @@ class XmlObjectsTest(unittest.TestCase):
         self.assertNotEquals(rule1,rule2)
         self.assertNotEquals(rule1,rule3)
         self.assertNotEquals(rule2,rule3)
+
+    def testRuleToDeleteQueryString(self):
+        rule = Rule('actor','joe@example.com')
+        self.assertEquals(urllib.urlencode([("type",rule.type),("value",rule.value)]),rule.to_delete_query_string())
 
     def testTagsAreEqual(self):
         tag1 = Tag(value='nyc', meta_url='http://www.example.com/api/tags/nyc')

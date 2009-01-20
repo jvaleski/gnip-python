@@ -47,7 +47,7 @@ class Gnip:
         self.client = davclient.DAVClient(self.base_url)
         self.client.set_basic_auth(username,password)
         self.client.headers['Accept'] = 'gzip, application/xml'
-        self.client.headers['User-Agent'] = 'Gnip-Client-Python/2.0.1'
+        self.client.headers['User-Agent'] = 'Gnip-Client-Python/2.1.0'
         self.client.headers['Content-Encoding'] = 'gzip'
         self.client.headers['Content-Type'] = 'application/xml'
 
@@ -114,7 +114,7 @@ class Gnip:
         """
 
         self.client.get(self.base_url + url_path)
-        return self.client.response.body
+        return (self.client.response.status, self.client.response.body)
     
     def do_http_head(self):
         """Do a HTTP HEAD.
@@ -327,6 +327,56 @@ class Gnip:
         rules_xml+="</rules>"
         return self.do_http_post(url_path, rules_xml)
 
+    def remove_rule_from_filter(self, publisher_scope, publisher_name, filter_name, rule):
+        """Remove a rule from a Gnip filter.
+
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @type publisher_name string
+        @param publisher_name The publisher of the filter to update
+        @type data string
+        @param filter_name The filter to update
+        @type data string
+        @param rule a Rule to remove
+        @return string containing response from the server
+
+        Remove a rule from a filter on the Gnip server, based on the
+        passed in parameters.
+
+        """
+
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
+
+        return self.do_http_delete(url_path)
+
+    def rule_exists_in_filter(self, publisher_scope, publisher_name, filter_name, rule):
+        """Check if a rule exists in a Gnip filter.
+
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @type publisher_name string
+        @param publisher_name The publisher of the filter to update
+        @type data string
+        @param filter_name The filter to check
+        @type data string
+        @param rule a Rule to check
+        @return boolean as to the existance of the rule, None if existance of the rule can't be determined
+
+        Check if a rule exists in a filter on the Gnip server, based on the
+        passed in parameters.
+
+        """
+
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
+
+        result = self.do_http_get(url_path)
+        if (result[0] == 200):
+            return True
+        elif (result[0] == 404):
+            return False
+        else:
+            return None
+
     def delete_filter(self, publisher_scope, publisher_name, name):
         """Delete a Gnip filter.
 
@@ -386,7 +436,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.do_http_get(url_path)
+        return self.do_http_get(url_path)[1]
 
     def get_publisher_activities(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
@@ -444,7 +494,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/activity/" + time_string + ".xml"
 
-        xml = self.do_http_get(url_path)
+        xml = self.do_http_get(url_path)[1]
         print xml
 
         return xml 
@@ -509,7 +559,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
                 time_string + ".xml"
 
-        return self.do_http_get(url_path)
+        return self.do_http_get(url_path)[1]
     
     def get_publisher_notifications(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
@@ -567,7 +617,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/notification/" + time_string + ".xml"
 
-        return self.do_http_get(url_path)
+        return self.do_http_get(url_path)[1]
 
     def get_filter_notifications(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
@@ -629,7 +679,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
                 time_string + ".xml"
 
-        return self.do_http_get(url_path)
+        return self.do_http_get(url_path)[1]
 
     def update_filter(self, publisher_scope, publisher_name, filter_to_update):
         """Update a Gnip filter.
@@ -735,7 +785,7 @@ class Gnip:
         """
 
         url_path = "/" + scope + "/publishers/" + name + ".xml"
-        return self.do_http_get(url_path)
+        return self.do_http_get(url_path)[1]
     
     def update_publisher(self, publisher):
         """Update a Gnip filter.

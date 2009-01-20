@@ -201,7 +201,29 @@ class GnipTestCase(unittest.TestCase):
             '</filter>'
         result = self.gnip.update_filter_from_xml(self.testpublisherscope, self.testpublisher, a_filter.name, updatedXml)
         self.assertEqual(result, self.success)
-        
+
+    def testRemoveRuleFromFilter(self):
+        a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        expected_rule = Rule(type="actor", value="you")
+        result = self.gnip.remove_rule_from_filter(self.testpublisherscope, self.testpublisher, a_filter.name, expected_rule)
+        self.assertEqual(result, self.success)
+        a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name)
+        self.assertFalse(expected_rule in a_filter_with_new_rule.rules)
+
+    def testRuleSearchFromFilter(self):
+        a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        existing_rule = Rule(type="actor", value="you")
+        missing_rule = Rule(type="actor", value="jud")
+        invalid_rule = Rule(type="", value="")
+        result = self.gnip.rule_exists_in_filter(self.testpublisherscope, self.testpublisher, a_filter.name, existing_rule)
+        self.assertTrue(result)
+        result = self.gnip.rule_exists_in_filter(self.testpublisherscope, self.testpublisher, a_filter.name, missing_rule)
+        self.assertFalse(result)
+        result = self.gnip.rule_exists_in_filter(self.testpublisherscope, self.testpublisher, a_filter.name, invalid_rule)
+        self.assertTrue(result is None)
+
     def testAddSingleRuleUpdateToFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
