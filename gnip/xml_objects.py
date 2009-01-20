@@ -122,3 +122,31 @@ class Rule(object):
         else:
             ret = 1
         return ret
+
+class Result(object):
+    """Gnip result container class"""
+
+    def __init__(self, message=None):
+        self.message = message
+
+    def from_xml(self, xml):
+        node = fromstring(xml)
+
+        if node is not None:
+            self.message = node.text
+        else:
+            self.message = ""
+
+class Error(object):
+    """Gnip error container class"""
+
+    def __init__(self, message=None):
+        self.message = message
+
+    def from_xml(self, xml):
+        node = fromstring(xml)
+
+        if node is not None:
+            self.message = node.text
+        else:
+            self.message = ""

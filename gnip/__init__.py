@@ -51,117 +51,6 @@ class Gnip:
         self.client.headers['Content-Encoding'] = 'gzip'
         self.client.headers['Content-Type'] = 'application/xml'
 
-
-    def compress_with_gzip(self, string):
-        """Compress a string with GZIP
-
-        @type string string
-        @param string The data to compress
-        @return string gzipped data
-
-        Does a proper gzip of the incoming string and returns it as a string
-
-        """
-
-        zbuf = StringIO.StringIO()
-        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=9)
-        zfile.write(string)
-        zfile.close()
-        return zbuf.getvalue()
-
-    def decompress_gzip(self, string):
-        """Decompress a string encoded with GZIP
-
-        @type string string
-        @param string The data to decompress
-        @return string unzipped data
-
-        Does a proper unzip of the incoming string and returns it as a string
-
-        """
-
-        zbuf = StringIO.StringIO(string)
-        zfile = gzip.GzipFile(mode='rb', fileobj=zbuf)
-        data = zfile.read();
-        zfile.close()
-        return data
-
-    def do_http_delete(self, url_path):
-        """Do a HTTP DELETE.
-
-        @type url_path string
-        @param url_path The URL to DELETE
-        @return string representing page retrieved
-
-        Does a HTTP DELETE request of the passed in url, and returns 
-        the result from the server.
-
-        """
-        
-        self.client.delete(self.base_url + url_path)
-        return self.client.response.body
-
-    def do_http_get(self, url_path):
-        """Do a HTTP GET.
-
-        @type url_path string
-        @param url_path The URL to GET
-        @return string representing page retrieved
-
-        Does a HTTP GET request of the passed in url, and returns 
-        the result from the server.
-
-        """
-
-        self.client.get(self.base_url + url_path)
-        return (self.client.response.status, self.client.response.body)
-    
-    def do_http_head(self):
-        """Do a HTTP HEAD.
-
-        @return response object
-
-        Does a HTTP HEAD request of the Gnip Server
-
-        """
-
-        self.client.head(self.base_url)
-        return self.client.response
-
-    def do_http_post(self, url_path, data):
-        """Do a HTTP POST.
-
-        @type url_path string
-        @param url_path The URL to POST to
-        @type data string in XML format
-        @param data Formatted POST data
-        @return string representing page retrieved
-
-        Does a HTTP POST request of the passed in url and data, and returns 
-        the result from the server.
-
-        """
-
-        self.client.post(self.base_url + url_path, self.compress_with_gzip(data))
-        return self.client.response.body
-
-    def do_http_put(self, url_path, data):
-        """Do a HTTP PUT.
-
-        @type url_path string
-        @param url_path The URL to PUT to
-        @type data string in XML format
-        @param data Formatted PUT data
-        @return string representing page retrieved
-
-        Does a HTTP PUT request of the passed in url and data, and returns 
-        the result from the server.
-
-        """
-        
-        self.client.put(self.base_url + url_path, self.compress_with_gzip(data))
-        return self.client.response.body
-
     def sync_clock(self, time):
         """Adjust a time so that it corresponds with Gnip time
 
@@ -177,7 +66,7 @@ class Gnip:
         """
 
         # Do HTTP HEAD request
-        resp = self.do_http_head()
+        resp = self.__do_http_head()
 
         # Get local time, before we do any other processing
         # so that we can get the two times as close as possible
@@ -243,7 +132,7 @@ class Gnip:
         """
 
         url_path = "/my/publishers/" + publisher_name + "/activity.xml"
-        return self.do_http_post(url_path, activity_xml)
+        return self.__do_http_post(url_path, activity_xml)
 
     def create_filter(self, publisher_scope, publisher_name, filter):
         """Create a Gnip filter.
@@ -279,7 +168,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
-        return self.do_http_post(url_path, data)
+        return self.__do_http_post(url_path, data)
 
     def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Add a rule to a Gnip filter.
@@ -300,7 +189,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
-        return self.do_http_post(url_path, rule.to_xml())
+        return self.__do_http_post(url_path, rule.to_xml())
 
     def add_rules_to_filter(self, publisher_scope, publisher_name, filter_name, rules):
         """Add rules to a Gnip filter.
@@ -325,7 +214,7 @@ class Gnip:
         for rule in rules:
             rules_xml+=rule.to_xml()
         rules_xml+="</rules>"
-        return self.do_http_post(url_path, rules_xml)
+        return self.__do_http_post(url_path, rules_xml)
 
     def remove_rule_from_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Remove a rule from a Gnip filter.
@@ -342,12 +231,11 @@ class Gnip:
 
         Remove a rule from a filter on the Gnip server, based on the
         passed in parameters.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
 
-        return self.do_http_delete(url_path)
+        return self.__do_http_delete(url_path)
 
     def rule_exists_in_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Check if a rule exists in a Gnip filter.
@@ -369,7 +257,7 @@ class Gnip:
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
 
-        result = self.do_http_get(url_path)
+        result = self.__do_http_get(url_path)
         if (result[0] == 200):
             return True
         elif (result[0] == 404):
@@ -394,7 +282,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.do_http_delete(url_path)
+        return self.__do_http_delete(url_path)
 
     def find_filter(self, publisher_scope, publisher_name, name):
         """Find a Gnip filter.
@@ -436,7 +324,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.do_http_get(url_path)[1]
+        return self.__do_http_get(url_path)[1]
 
     def get_publisher_activities(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
@@ -494,7 +382,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/activity/" + time_string + ".xml"
 
-        xml = self.do_http_get(url_path)[1]
+        xml = self.__do_http_get(url_path)[1]
         print xml
 
         return xml 
@@ -559,7 +447,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
                 time_string + ".xml"
 
-        return self.do_http_get(url_path)[1]
+        return self.__do_http_get(url_path)[1]
     
     def get_publisher_notifications(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
@@ -617,7 +505,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/notification/" + time_string + ".xml"
 
-        return self.do_http_get(url_path)[1]
+        return self.__do_http_get(url_path)[1]
 
     def get_filter_notifications(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
@@ -679,7 +567,7 @@ class Gnip:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
                 time_string + ".xml"
 
-        return self.do_http_get(url_path)[1]
+        return self.__do_http_get(url_path)[1]
 
     def update_filter(self, publisher_scope, publisher_name, filter_to_update):
         """Update a Gnip filter.
@@ -718,7 +606,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.do_http_put(url_path, data)
+        return self.__do_http_put(url_path, data)
     
     def create_publisher(self, publisher):
         """Create a Gnip publisher.
@@ -733,7 +621,7 @@ class Gnip:
         """
 
         url_path = "/my/publishers"
-        return self.do_http_post(url_path, publisher.to_xml())
+        return self.__do_http_post(url_path, publisher.to_xml())
     
     def create_publisher_from_xml(self, name, data):
         """Create a Gnip publisher.
@@ -750,7 +638,7 @@ class Gnip:
         """
 
         url_path = "/my/publishers"
-        return self.do_http_post(url_path, data)
+        return self.__do_http_post(url_path, data)
     
     def get_publisher(self, scope, name):
         """Get a Gnip publisher.
@@ -785,7 +673,7 @@ class Gnip:
         """
 
         url_path = "/" + scope + "/publishers/" + name + ".xml"
-        return self.do_http_get(url_path)[1]
+        return self.__do_http_get(url_path)[1]
     
     def update_publisher(self, publisher):
         """Update a Gnip filter.
@@ -818,8 +706,101 @@ class Gnip:
         """
 
         url_path = "/my/publishers/" + name + ".xml"
-        return self.do_http_put(url_path, data)
+        return self.__do_http_put(url_path, data)
 
+    def __compress_with_gzip(self, string):
+        """Compress a string with GZIP
+
+        @type string string
+        @param string The data to compress
+        @return string gzipped data
+
+        Does a proper gzip of the incoming string and returns it as a string
+
+        """
+
+        zbuf = StringIO.StringIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=9)
+        zfile.write(string)
+        zfile.close()
+        return zbuf.getvalue()
+
+    def __do_http_delete(self, url_path):
+        """Do a HTTP DELETE.
+
+        @type url_path string
+        @param url_path The URL to DELETE
+        @return string representing page retrieved
+
+        Does a HTTP DELETE request of the passed in url, and returns
+        the result from the server.
+
+        """
+
+        self.client.delete(self.base_url + url_path)
+        return self.client.response.body
+
+    def __do_http_get(self, url_path):
+        """Do a HTTP GET.
+
+        @type url_path string
+        @param url_path The URL to GET
+        @return string representing page retrieved
+
+        Does a HTTP GET request of the passed in url, and returns
+        the result from the server.
+
+        """
+
+        self.client.get(self.base_url + url_path)
+        return (self.client.response.status, self.client.response.body)
+
+    def __do_http_head(self):
+        """Do a HTTP HEAD.
+
+        @return response object
+
+        Does a HTTP HEAD request of the Gnip Server
+
+        """
+
+        self.client.head(self.base_url)
+        return self.client.response
+
+    def __do_http_post(self, url_path, data):
+        """Do a HTTP POST.
+
+        @type url_path string
+        @param url_path The URL to POST to
+        @type data string in XML format
+        @param data Formatted POST data
+        @return string representing page retrieved
+
+        Does a HTTP POST request of the passed in url and data, and returns
+        the result from the server.
+
+        """
+
+        self.client.post(self.base_url + url_path, self.__compress_with_gzip(data))
+        return self.client.response.body
+
+    def __do_http_put(self, url_path, data):
+        """Do a HTTP PUT.
+
+        @type url_path string
+        @param url_path The URL to PUT to
+        @type data string in XML format
+        @param data Formatted PUT data
+        @return string representing page retrieved
+
+        Does a HTTP PUT request of the passed in url and data, and returns
+        the result from the server.
+
+        """
+
+        self.client.put(self.base_url + url_path, self.__compress_with_gzip(data))
+        return self.client.response.body
+                
 if __name__=="__main__":
 
     print "This module was not designed to be called directly."

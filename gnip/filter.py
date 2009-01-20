@@ -76,9 +76,6 @@ class Filter(object):
         """   
 
         filter_node = fromstring(xml)
-        post_url_node = filter_node.find("postURL")
-        rule_nodes = filter_node.findall("rule")
-        
         self.name = filter_node.get("name")
 
         if filter_node.get("fullData") == "true":
@@ -86,11 +83,13 @@ class Filter(object):
         else:
             self.full_data = False
         
+        post_url_node = filter_node.find("postURL")
         if post_url_node is not None:
             self.post_url = post_url_node.text
         else:
             self.post_url = None
 
+        rule_nodes = filter_node.findall("rule")
         self.rules = []
         for rule_node in rule_nodes:
             rule = Rule(type=rule_node.get("type"), value=rule_node.text)

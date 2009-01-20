@@ -41,4 +41,3 @@ def regressionTest():
 if __name__ == "__main__":
     unittest.main(defaultTest="regressionTest")
     #unittest.main(gnipTest, "GnipTestCase.testUpdatePublisher")
-    #unittest.main(filterTest, "FilterTestCase.testFilterWithFullDataSetToFalse")

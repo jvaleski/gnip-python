@@ -67,5 +67,21 @@ class XmlObjectsTest(unittest.TestCase):
 
         self.assertNotEquals(tag1,tag2)
 
+    def testResultObjectParses(self):
+        result1 = Result()
+        result1.from_xml("<result>Hello World!</result>")
+        self.assertEquals("Hello World!", result1.message)
+
+        result2 = Result("Hello World!")
+        self.assertEquals("Hello World!", result2.message)                
+
+    def testErrorObjectParses(self):
+        error1 = Error()
+        error1.from_xml("<error>Hello Cruel World!</error>")
+        self.assertEquals("Hello Cruel World!", error1.message)
+
+        error2 = Error("Hello Cruel World!")
+        self.assertEquals("Hello Cruel World!", error2.message)
+
 if __name__ == '__main__':
     unittest.main()
