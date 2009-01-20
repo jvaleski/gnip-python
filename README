@@ -9,13 +9,9 @@ provides a single interface for both roles.
 
 These 3rd party libraries are required by the Gnip Client:
 
-- iso8601 - http://pypi.python.org/pypi/iso8601
-- pyjavaproperties - http://pypi.python.org/pypi/pyjavaproperties/0.3
-
-The easiest installation method is to use easy_install which offers all
-of the above modules.  For more information, see:
-
-  http://peak.telecommunity.com/DevCenter/EasyInstall
+- iso8601-0.1.4 - http://pypi.python.org/pypi/iso8601
+- pyjavaproperties-0.3 - http://pypi.python.org/pypi/pyjavaproperties/0.3
+- elementtree-1.2.7_20070827_preview - http://effbot.org/zone/element-index.htm
 
 == Install ==
 
