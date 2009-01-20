@@ -10,6 +10,7 @@ setup(
     install_requires = [
             'iso8601 == 0.1.4',
             'pyjavaproperties == 0.3',
-            'elementtree == 1.2.7_20070827_preview'
+            'elementtree == 1.2.7_20070827_preview',
+            'davclient == 0.2.0'
     ]
 )

@@ -20,8 +20,6 @@ __license__ = "Python"
 import sys, os, re, unittest, logging
 sys.path.append(".")
 sys.path.append("./test")
-import gnipTest
-import filterTest
 
 def regressionTest():
     logging.getLogger('').setLevel(logging.INFO)
@@ -29,7 +27,7 @@ def regressionTest():
     logging.info("Searching for tests in " + path)
     files = os.listdir(path)
     
-    test = re.compile("test\.py$", re.IGNORECASE)
+    test = re.compile("_test\.py$", re.IGNORECASE)
     files = filter(test.search, files)
     print files
     

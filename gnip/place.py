@@ -1,4 +1,4 @@
-from ElementTree import *
+from elementtree.ElementTree import *
 import xml_objects
 
 class Place(object):

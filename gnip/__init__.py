@@ -7,7 +7,7 @@ import time
 import gzip
 import StringIO
 import publisher
-from ElementTree import *
+from elementtree.ElementTree import *
 from pyjavaproperties import Properties
 
 class Gnip:

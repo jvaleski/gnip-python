@@ -19,7 +19,7 @@ class GnipTestCase(unittest.TestCase):
         basedir = __file__[0:index]
 
         p = Properties()
-        p.load(open(basedir + '/gnip-account.properties'))
+        p.load(open(basedir + '/gnip_account.properties'))
         p.load(open(basedir + '/test.properties'))
         self.gnip = Gnip(p['gnip.username'], p['gnip.password'], p['gnip.server'])
         self.testpublisher = p['gnip.test.publisher']

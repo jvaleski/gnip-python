@@ -1,5 +1,5 @@
 import iso8601
-from ElementTree import *
+from elementtree.ElementTree import *
 from xml_objects import Rule
 
 class Filter(object):
