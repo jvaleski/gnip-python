@@ -8,6 +8,7 @@ import gzip
 import StringIO
 import publisher
 from ElementTree import *
+from pyjavaproperties import Properties
 
 class Gnip:
     """Common functionality between all Gnip classes
@@ -16,7 +17,7 @@ class Gnip:
 
     """
 
-    def __init__(self, username, password, gnip_server="https://prod.gnipcentral.com"):
+    def __init__(self, username, password, gnip_server=None):
         """Initialize the class.
 
         @type username string
@@ -30,14 +31,22 @@ class Gnip:
         information, used to log into the Gnip website.
 
         """
+
+        index = int(__file__.rfind("/"))
+        basedir = __file__[0:index]
+        p = Properties()
+        p.load(open(basedir + '/gnip.properties'))
         
         # Determine base Gnip URL
-        self.base_url = gnip_server
+        if (gnip_server is None):
+            self.base_url = p['gnip.server']
+        else:
+            self.base_url = gnip_server
         
         # Configure authentication
         self.client = davclient.DAVClient(self.base_url)
         self.client.set_basic_auth(username,password)
-        self.client.headers['Accept'] = 'application/xml'
+        self.client.headers['Accept'] = 'gzip, application/xml'
         self.client.headers['User-Agent'] = 'Gnip-Client-Python/2.0.1'
         self.client.headers['Content-Encoding'] = 'gzip'
         self.client.headers['Content-Type'] = 'application/xml'
@@ -271,6 +280,27 @@ class Gnip:
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
         return self.do_http_post(url_path, data)
+
+    def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule_xml):
+        """Add a rule to a Gnip filter.
+
+        @type publisher_scope string
+        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @type publisher_name string
+        @param publisher_name The publisher of the filter to update
+        @type data string
+        @param filter_name The filter to update
+        @type data string
+        @param rule_xml XML formatted to Gnip Rule schema
+        @return string containing response from the server
+
+        Add new rule to a filter on the Gnip server, based on the
+        passed in parameters.
+
+        """
+
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
+        return self.do_http_post(url_path, rule_xml)
 
     def delete_filter(self, publisher_scope, publisher_name, name):
         """Delete a Gnip filter.

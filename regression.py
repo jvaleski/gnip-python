@@ -20,6 +20,8 @@ __license__ = "Python"
 import sys, os, re, unittest, logging
 sys.path.append(".")
 sys.path.append("./test")
+import gnipTest
+import filterTest
 
 def regressionTest():
     logging.getLogger('').setLevel(logging.INFO)
@@ -40,3 +42,5 @@ def regressionTest():
 
 if __name__ == "__main__":
     unittest.main(defaultTest="regressionTest")
+    #unittest.main(gnipTest, "GnipTestCase.testUpdatePublisher")
+    #unittest.main(filterTest, "FilterTestCase.testFilterWithFullDataSetToFalse")

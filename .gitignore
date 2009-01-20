@@ -6,3 +6,6 @@
 *.ipr
 *.iml
 *.iws
+*.egg-info
+dist
+build

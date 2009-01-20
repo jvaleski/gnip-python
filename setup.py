@@ -1,24 +1,15 @@
-#!/usr/bin/env python
-import sys
-from distutils.core import setup
- 
-version = '0.1'
- 
-kwargs = {
-    'name' : 'gnip-python',
-    'version' : version,
-    'description' : 'Gnip Convenience Class',
-    'long_description' : \
-    """gnip-python is a convenience class for Gnip API""",
-    'author' : 'Gnip',
-    'author_email' : 'gnip-community@googlegroups.com',
-    'url' : 'http://groups.google.com/group/gnip-community',
-    'packages' : ['gnip'],
-    }
- 
-#if sys.hexversion >= 0x02050000:
+from setuptools import setup, find_packages
 
-kwargs['requires'] = ['DAVClient', 'iso8601', 'pyjavaproperties']
-kwargs['provides'] = ['gnip']
- 
-setup(**kwargs)
+setup(
+    name="gnip",
+    version="0.2",
+
+    packages=find_packages('gnip'),
+    package_dir={'gnip':'.'},
+
+    install_requires = [
+            'iso8601 == 0.1.4',
+            'pyjavaproperties == 0.3',
+            'elementtree == 1.2.7_20070827_preview'
+    ]
+)

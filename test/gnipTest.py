@@ -2,7 +2,7 @@ import sys
 sys.path.append("../")
 
 from gnip import *
-from gnip import xml_objects
+from gnip.xml_objects import *
 
 from string import count
 from xml.dom.minidom import parseString
@@ -33,7 +33,7 @@ class GnipTestCase(unittest.TestCase):
             '<rule type="actor">you</rule>' + \
             '<rule type="actor">bob</rule>' + \
             '</filter>'
-        self.rules = [dict(type="actor", value="me"), dict(type="actor", value="you"), dict(type="actor", value="bob")]
+        self.rules = [Rule(type="actor", value="me"), Rule(type="actor", value="you"), Rule(type="actor", value="bob")]
         self.filterName = "test"
         self.filterFullData = "false"
         self.success = '<result>Success</result>'
@@ -186,7 +186,7 @@ class GnipTestCase(unittest.TestCase):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         a_second_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
-        a_second_filter.rules.append(dict(type="actor", value="joe"))
+        a_second_filter.rules.append(Rule(type="actor", value="joe"))
         result = self.gnip.update_filter(self.testpublisherscope, self.testpublisher, a_second_filter)
         self.assertEqual(result, self.success)
 
@@ -201,6 +201,16 @@ class GnipTestCase(unittest.TestCase):
             '</filter>'
         result = self.gnip.update_filter_from_xml(self.testpublisherscope, self.testpublisher, a_filter.name, updatedXml)
         self.assertEqual(result, self.success)
+        
+    def testAddSingleRuleUpdateToFilter(self):
+        a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
+        self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
+        ruleXml = '<rule type="actor">jud</rule>'
+        result = self.gnip.add_rule_to_filter(self.testpublisherscope, self.testpublisher, a_filter.name, ruleXml)
+        self.assertEqual(result, self.success)
+        a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name)
+        expected_rule = Rule(type="actor", value="jud")
+        self.assertTrue(expected_rule in a_filter_with_new_rule.rules)
 
     def testCreateFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
@@ -259,8 +269,10 @@ class GnipTestCase(unittest.TestCase):
         
     def testUpdatePublisherFromXml(self):
         self.publisherXml = '<publisher name="' + self.testpublisher + '">' + \
-            '<supportedRuleTypes><type>actor</type>' + \
-            '</supportedRuleTypes></publisher>'
+            '<supportedRuleTypes>' + \
+            '<type>actor</type>' + \
+            '</supportedRuleTypes>' + \
+            '</publisher>'
         resultXml = self.gnip.update_publisher_from_xml(self.testpublisher, self.publisherXml)
         resultXml = self.gnip.get_publisher_xml(self.testpublisherscope, self.testpublisher)
         self.assert_('<type>tag</type>' not in resultXml)

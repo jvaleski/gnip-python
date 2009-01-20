@@ -1,5 +1,6 @@
 import iso8601
 from ElementTree import *
+from xml_objects import Rule
 
 class Filter(object):
     """Gnip filter container class
@@ -8,14 +9,14 @@ class Filter(object):
 
     """
     
-    def __init__(self, name="", full_data="true", post_url=None, rules=[]):
+    def __init__(self, name="", full_data=True, post_url=None, rules=[]):
         """Initialize the class.
 
         @type name string
         @param name The name of the filter
         @type post_url string
         @param post_url The URL to post filter activities to
-        @type rules List of dict(type, value)
+        @type rules List of rules
         @param rules The rules for the collection
         @type full_data string
         @type full_data Whether or not this filter is for full data
@@ -50,12 +51,12 @@ class Filter(object):
             rule_nodes = []
             for rule in self.rules:
                 rule_node = Element("rule")
-                rule_node.text = rule["value"]
-                rule_node.set("type", rule["type"]) 
+                rule_node.text = rule.value
+                rule_node.set("type", rule.type)
                 rule_nodes.append(rule_node)
                 
         filter_node.set("name", self.name)
-        filter_node.set("fullData", self.full_data)
+        filter_node.set("fullData", str(self.full_data).lower())
         if post_url_node is not None:
             filter_node.append(post_url_node)
         for rule_node in rule_nodes:
@@ -74,14 +75,16 @@ class Filter(object):
         
         """   
 
-        # Pull out all of the data from the xml
         filter_node = fromstring(xml)
         post_url_node = filter_node.find("postURL")
         rule_nodes = filter_node.findall("rule")
         
-        # set local variables
         self.name = filter_node.get("name")
-        self.full_data = filter_node.get("fullData")
+
+        if filter_node.get("fullData") == "true":
+            self.full_data = True
+        else:
+            self.full_data = False
         
         if post_url_node is not None:
             self.post_url = post_url_node.text
@@ -90,7 +93,7 @@ class Filter(object):
 
         self.rules = []
         for rule_node in rule_nodes:
-            rule = dict(type=rule_node.get("type"), value=rule_node.text)
+            rule = Rule(type=rule_node.get("type"), value=rule_node.text)
             self.rules.append(rule)
 
     def __str__(self):
