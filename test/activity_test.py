@@ -14,7 +14,7 @@ class ActivityTestCase(unittest.TestCase):
         logging.getLogger('').setLevel(logging.INFO)
         index = int(__file__.rfind("/"))
         basedir = __file__[0:index]
-        logging.info("Loading XML files from: " + basedir)
+        #logging.info("Loading XML files from: " + basedir)
         
         self.xml_without_payload = open(basedir + "/activity_without_payload.xml").read()
         self.xml_with_payload = open(basedir + "/activity_with_payload.xml").read()

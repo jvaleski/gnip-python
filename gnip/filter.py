@@ -97,3 +97,16 @@ class Filter(object):
 
     def __str__(self):
         return "[" + self.name + ", " + self.postURL + ", " + str(self.rules) + "]"
+
+    def __cmp__(self, other):
+        if isinstance(other, Filter):
+            ret = cmp(self.name, other.name)
+            if ret is 0:
+                ret = cmp(self.post_url, other.post_url)
+                if ret is 0:
+                    ret = cmp(self.full_data, other.full_data)
+                    if ret is 0:
+                        ret = cmp(sorted(self.rules), sorted(other.rules))
+        else:
+            ret = 1
+        return ret

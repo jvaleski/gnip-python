@@ -83,7 +83,8 @@ class Payload(object):
             for media_url in self.media_urls:
                 media_url_node = Element("mediaURL")
                 media_url_node.text = media_url.value
-                media_url_node.set("metaURL", media_url.meta_url)
+                if media_url.meta_url is not None:
+                    media_url_node.set("metaURL", media_url.meta_url)
                 payload_node.append(media_url_node)
 
         if self.raw is not None:

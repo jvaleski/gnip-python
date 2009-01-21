@@ -24,12 +24,13 @@ sys.path.append("./test")
 def regressionTest():
     logging.getLogger('').setLevel(logging.INFO)
     path = os.path.abspath(os.path.dirname(sys.argv[0])) + "/test"
-    logging.info("Searching for tests in " + path)
+    logging.debug("Searching for tests in " + path)
     files = os.listdir(path)
     
     test = re.compile("_test\.py$", re.IGNORECASE)
     files = filter(test.search, files)
-    print files
+    for file in files:
+        logging.info("Loading tests from " + file)
     
     filenameToModuleName = lambda f: os.path.splitext(f)[0]
     moduleNames = map(filenameToModuleName, files)

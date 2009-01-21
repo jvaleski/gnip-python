@@ -82,5 +82,50 @@ class FilterTestCase(unittest.TestCase):
         a_filter = filter.Filter(name=self.filterName, post_url="http://example.com", rules=self.rules, full_data=self.filterFullData)
         self.assertEqual(a_filter.to_xml(), expected_xml)
 
+    def testFilterEquals(self):
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        self.assertEquals(filter1, filter2)
+
+        filter2 = filter.Filter(name="jojo-filter", post_url="http://www.example.com/posttome", rules=[Rule("actor", "jojo")])
+        self.assertEquals(filter1, filter2)
+
+        filter1 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "jojo")])
+        filter2 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "jojo")])
+        self.assertEquals(filter1, filter2)
+
+        filter1 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "jojo"), Rule("actor", "bob")])
+        filter2 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "bob"), Rule("actor", "jojo")])
+        self.assertEquals(filter1, filter2)
+
+        filter1 = filter.Filter(name="jojo-filter")
+        filter2 = filter.Filter(name="jojo-filter")
+        self.assertEquals(filter1, filter2)
+
+        filter1 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "me"), Rule("actor", "you"), Rule("actor", "bob")])
+        filter2 = filter.Filter(name="jojo-filter", rules=[Rule("actor", "bob"), Rule("actor", "you"), Rule("actor", "me")])
+        self.assertEquals(filter1, filter2)
+        
+    def testFilterNotEquals(self):
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-other-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        self.assertNotEquals(filter1, filter2)
+
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-filter", False, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        self.assertNotEquals(filter1, filter2)
+
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-filter", True, "http://www.example.com/posttomehere", [Rule("actor", "jojo")])
+        self.assertNotEquals(filter1, filter2)
+
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "bob")])
+        self.assertNotEquals(filter1, filter2)
+
+        filter1 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo")])
+        filter2 = filter.Filter("jojo-filter", True, "http://www.example.com/posttome", [Rule("actor", "jojo"), Rule("to", "frank")])
+        self.assertNotEquals(filter1, filter2)
+        
 if __name__ == '__main__':
     unittest.main()

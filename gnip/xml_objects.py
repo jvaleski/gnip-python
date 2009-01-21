@@ -1,5 +1,6 @@
 from elementtree.ElementTree import *
 import urllib
+import string
 
 class URL(object):
     """Gnip URL container class"""
@@ -117,7 +118,7 @@ class Rule(object):
     def __cmp__(self, other):
         if isinstance(other, Rule):
             ret = cmp(self.type, other.type)
-            if(ret == 0):
+            if ret is 0:
                 ret = cmp(self.value, other.value)
         else:
             ret = 1
@@ -137,6 +138,13 @@ class Result(object):
         else:
             self.message = ""
 
+    def __cmp__(self, other):
+        if isinstance(other, Result):
+            ret = cmp(self.message, other.message)
+        else:
+            ret = 1
+        return ret
+
 class Error(object):
     """Gnip error container class"""
 
@@ -150,3 +158,10 @@ class Error(object):
             self.message = node.text
         else:
             self.message = ""
+
+    def __cmp__(self, other):
+        if isinstance(other, Error):
+            ret = cmp(self.message, other.message)
+        else:
+            ret = 1
+        return ret

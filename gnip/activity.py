@@ -92,93 +92,8 @@ class Activity(object):
         """
 
         root_node = fromstring(xml)
+        self.from_xml_node(root_node)
 
-        at_node = root_node.find("at")
-        self.set_at_from_string(at_node.text)
-
-        action_node = root_node.find("action")
-        self.action = action_node.text
-
-        activity_id_node = root_node.find("activityID")
-        if activity_id_node is not None:
-            self.activity_id = activity_id_node.text
-        else:
-            self.activity_id = None
-
-        url_node = root_node.find("URL")
-        if url_node is not None:
-            self.url = url_node.text
-        else:
-            self.url = None
-
-        source_nodes = root_node.findall("source")
-        if source_nodes is not None:
-            self.sources = []
-            for source_node in source_nodes:
-                source = source_node.text
-                self.sources.append(source)
-        else:
-            self.sources = None
-
-        place_nodes = root_node.findall("place")
-        if place_nodes is not None:
-            self.places = []
-            for place_node in place_nodes:
-                a_place = place.Place()
-                a_place.from_xml_node(place_node)
-                self.places.append(a_place)
-        else:
-            self.places = None
-
-        actor_nodes = root_node.findall("actor")
-        if actor_nodes is not None:    
-            self.actors = []
-            for actor_node in actor_nodes:
-                actor = xml_objects.Actor(value=actor_node.text, meta_url=actor_node.get("metaURL"), uid=actor_node.get("uid"))
-                self.actors.append(actor)
-        else:
-            self.actors = None
-
-        destination_url_nodes = root_node.findall("destinationURL")
-        if destination_url_nodes is not None:    
-            self.destination_urls = []
-            for destination_url_node in destination_url_nodes:
-                destination_url = xml_objects.URL(value=destination_url_node.text, meta_url=destination_url_node.get("metaURL"))
-                self.destination_urls.append(destination_url)
-        else:
-            self.destination_urls = None
-
-        tag_nodes = root_node.findall("tag")
-        if tag_nodes is not None:    
-            self.tags = []
-            for tag_node in tag_nodes:
-                tag = xml_objects.Tag(value=tag_node.text, meta_url=tag_node.get("metaURL"))
-                self.tags.append(tag)
-        else:
-            self.tags = None
-
-        to_nodes = root_node.findall("to")
-        if to_nodes is not None:
-            self.tos = []
-            for to_node in to_nodes:
-                to = xml_objects.To(value=to_node.text, meta_url=to_node.get("metaURL"))
-                self.tos.append(to)
-        else:
-            self.tos = None
-
-        regarding_url_nodes = root_node.findall("regardingURL")
-        if regarding_url_nodes is not None:
-            self.regarding_urls = []
-            for regarding_url_node in regarding_url_nodes:
-                regarding_url = xml_objects.URL(value=regarding_url_node.text, meta_url=regarding_url_node.get("metaURL"))
-                self.regarding_urls.append(regarding_url)
-        else:
-            self.regarding_urls = None
-
-        payload_node = root_node.find("payload")
-        if payload_node is not None:
-            self.payload = payload.Payload()
-            self.payload.from_xml_node(payload_node)
 
     def to_xml(self):
         """ Return a XML representation of this object
@@ -216,53 +131,148 @@ class Activity(object):
                 source_node = Element("source")
                 source_node.text = source
                 activity_node.append(source_node)
-
+            
         if self.places is not None and len(self.places) > 0:
             for a_place in self.places:
                 place_node = a_place.to_xml_node()
-                activity_node.append(place_node)            
+                activity_node.append(place_node)
 
         if self.actors is not None and len(self.actors) > 0:
             for actor in self.actors:
                 actor_node = Element("actor")
                 actor_node.text = actor.value
-                actor_node.set("metaURL", actor.meta_url)
-                actor_node.set("uid", actor.uid)
+                if actor.meta_url is not None:
+                    actor_node.set("metaURL", actor.meta_url)
+                if actor.uid is not None:
+                    actor_node.set("uid", actor.uid)
                 activity_node.append(actor_node)
 
         if self.destination_urls is not None and len(self.destination_urls) > 0:
             for destination_url in self.destination_urls:
                 destination_url_node = Element("destinationURL")
                 destination_url_node.text = destination_url.value
-                destination_url_node.set("metaURL", destination_url.meta_url)
+                if destination_url.meta_url is not None:
+                    destination_url_node.set("metaURL", destination_url.meta_url)
                 activity_node.append(destination_url_node)
 
         if self.tags is not None and len(self.tags) > 0:
             for tag in self.tags:
                 tag_node = Element("tag")
                 tag_node.text = tag.value
-                tag_node.set("metaURL", tag.meta_url)
+                if tag.meta_url is not None:
+                    tag_node.set("metaURL", tag.meta_url)
                 activity_node.append(tag_node)
 
         if self.tos is not None and len(self.tos) > 0:
             for to in self.tos:
                 to_node = Element("to")
                 to_node.text = to.value
-                to_node.set("metaURL", to.meta_url)
+                if to.meta_url is not None:
+                    to_node.set("metaURL", to.meta_url)
                 activity_node.append(to_node)
 
         if self.regarding_urls is not None and len(self.regarding_urls) > 0:
             for regarding_url in self.regarding_urls:
                 regarding_url_node = Element("regardingURL")
                 regarding_url_node.text = regarding_url.value
-                regarding_url_node.set("metaURL", regarding_url.meta_url)
+                if regarding_url.meta_url is not None:
+                    regarding_url_node.set("metaURL", regarding_url.meta_url)
                 activity_node.append(regarding_url_node)
 
         if self.payload is not None:
-            payload_node = self.payload.to_xml_node()                 
+            payload_node = self.payload.to_xml_node()
             activity_node.append(payload_node)
 
         return tostring(activity_node)                                                          
+
+
+    def from_xml_node(self, xml_node):
+        at_node = xml_node.find("at")
+        self.set_at_from_string(at_node.text)
+
+        action_node = xml_node.find("action")
+        self.action = action_node.text
+
+        activity_id_node = xml_node.find("activityID")
+        if activity_id_node is not None:
+            self.activity_id = activity_id_node.text
+        else:
+            self.activity_id = None
+
+        url_node = xml_node.find("URL")
+        if url_node is not None:
+            self.url = url_node.text
+        else:
+            self.url = None
+
+        source_nodes = xml_node.findall("source")
+        if source_nodes is not None:
+            self.sources = []
+            for source_node in source_nodes:
+                source = source_node.text
+                self.sources.append(source)
+        else:
+            self.sources = None
+
+        place_nodes = xml_node.findall("place")
+        if place_nodes is not None:
+            self.places = []
+            for place_node in place_nodes:
+                a_place = place.Place()
+                a_place.from_xml_node(place_node)
+                self.places.append(a_place)
+        else:
+            self.places = None
+
+        actor_nodes = xml_node.findall("actor")
+        if actor_nodes is not None:
+            self.actors = []
+            for actor_node in actor_nodes:
+                actor = xml_objects.Actor(value=actor_node.text, meta_url=actor_node.get("metaURL"), uid=actor_node.get("uid"))
+                self.actors.append(actor)
+        else:
+            self.actors = None
+
+        destination_url_nodes = xml_node.findall("destinationURL")
+        if destination_url_nodes is not None:
+            self.destination_urls = []
+            for destination_url_node in destination_url_nodes:
+                destination_url = xml_objects.URL(value=destination_url_node.text, meta_url=destination_url_node.get("metaURL"))
+                self.destination_urls.append(destination_url)
+        else:
+            self.destination_urls = None
+
+        tag_nodes = xml_node.findall("tag")
+        if tag_nodes is not None:
+            self.tags = []
+            for tag_node in tag_nodes:
+                tag = xml_objects.Tag(value=tag_node.text, meta_url=tag_node.get("metaURL"))
+                self.tags.append(tag)
+        else:
+            self.tags = None
+
+        to_nodes = xml_node.findall("to")
+        if to_nodes is not None:
+            self.tos = []
+            for to_node in to_nodes:
+                to = xml_objects.To(value=to_node.text, meta_url=to_node.get("metaURL"))
+                self.tos.append(to)
+        else:
+            self.tos = None
+
+        regarding_url_nodes = xml_node.findall("regardingURL")
+        if regarding_url_nodes is not None:
+            self.regarding_urls = []
+            for regarding_url_node in regarding_url_nodes:
+                regarding_url = xml_objects.URL(value=regarding_url_node.text, meta_url=regarding_url_node.get("metaURL"))
+                self.regarding_urls.append(regarding_url)
+        else:
+            self.regarding_urls = None
+
+        payload_node = xml_node.find("payload")
+        if payload_node is not None:
+            self.payload = payload.Payload()
+            self.payload.from_xml_node(payload_node)
 
     def __str__(self):
         return "[" + self.get_at_as_string() + \

@@ -23,4 +23,29 @@ class PublisherTestCase(unittest.TestCase):
         
         self.assertEqual(a_publisher.name, self.publisherName)
         self.assertEqual(a_publisher.rule_types, self.rule_types)
+
+    def testPublisherEquals(self):
+        publisher1 = publisher.Publisher("foo", ["actor", "to"])
+        publisher2 = publisher.Publisher("foo", ["actor", "to"])
+
+        self.assertEquals(publisher1,publisher2)
+
+        publisher1 = publisher.Publisher("foo", ["actor", "to"])
+        publisher2 = publisher.Publisher("foo", ["to", "actor"])
+
+        self.assertEquals(publisher1,publisher2)
+
+    def testPublisherNotEquals(self):
+        publisher1 = publisher.Publisher("foo", ["actor", "to"])
+        publisher2 = publisher.Publisher("bar", ["actor", "to"])
+        publisher3 = publisher.Publisher("foo", ["actor"])
+        publisher4 = publisher.Publisher("foo", ["actor", "tags"])
+
+        self.assertNotEquals(publisher1, publisher2)
+        self.assertNotEquals(publisher1, publisher3)
+        self.assertNotEquals(publisher2, publisher3)
+        self.assertNotEquals(publisher1, publisher4)
+
+if __name__ == '__main__':
+    unittest.main()             
         

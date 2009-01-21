@@ -43,3 +43,12 @@ class Publisher(object):
                 for subnode in node.childNodes:
                     if subnode.tagName == 'type':
                         self.rule_types.append(subnode.childNodes[0].nodeValue)
+
+    def __cmp__(self, other):
+        if isinstance(other, Publisher):
+            ret = cmp(self.name, other.name)
+            if ret is 0:
+                ret = cmp(sorted(self.rule_types), sorted(other.rule_types))                    
+        else:
+            ret = 1
+        return ret

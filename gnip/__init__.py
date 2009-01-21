@@ -1,14 +1,17 @@
+import activities
 import activity
 import filter
+import publisher
 import datetime
 import davclient
 import iso8601
 import time
 import gzip
 import StringIO
-import publisher
 from elementtree.ElementTree import *
 from pyjavaproperties import Properties
+from xml_objects import *
+from response import *
 
 class Gnip:
     """Common functionality between all Gnip classes
@@ -110,29 +113,8 @@ class Gnip:
 
         """
 
-        activity_xml = '<?xml version="1.0" encoding="UTF-8"?><activities>'
-        for activity in activities:
-            activity_xml += activity.to_xml()
-        activity_xml += '</activities>'
-
-        return self.publish_xml(publisher_name, activity_xml)
-
-    def publish_xml(self, publisher_name, activity_xml):
-        """Publish activities.
-
-        @type publisher_name string
-        @param publisher_name string The name of the publisher
-        @type activity_xml string
-        @param activity_xml XML document formatted to Gnip schema
-        @return string containing response from the server
-
-        This method takes in a XML document with a list of activities and 
-        sends it to the Gnip server.
-
-        """
-
         url_path = "/my/publishers/" + publisher_name + "/activity.xml"
-        return self.__do_http_post(url_path, activity_xml)
+        return self.__parse_response(self.__do_http_post(url_path, activities.to_xml()))
 
     def create_filter(self, publisher_scope, publisher_name, filter):
         """Create a Gnip filter.
@@ -149,26 +131,8 @@ class Gnip:
         passed in filter.
 
         """
-        return self.create_filter_from_xml(publisher_scope, publisher_name, filter.to_xml())
-
-    def create_filter_from_xml(self, publisher_scope, publisher_name, data):
-        """Create a Gnip filter.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type publisher_name string
-        @param publisher_name The publisher to create filter for
-        @type data string
-        @param data XML formatted to Gnip filter schema
-        @return string containing response from the server
-
-        Creates a new filter on the Gnip server, based on the
-        passed in parameters.
-
-        """
-
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
-        return self.__do_http_post(url_path, data)
+        return self.__parse_response(self.__do_http_post(url_path, filter.to_xml()))
 
     def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Add a rule to a Gnip filter.
@@ -189,7 +153,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
-        return self.__do_http_post(url_path, rule.to_xml())
+        return self.__parse_response(self.__do_http_post(url_path, rule.to_xml()))
 
     def add_rules_to_filter(self, publisher_scope, publisher_name, filter_name, rules):
         """Add rules to a Gnip filter.
@@ -214,7 +178,7 @@ class Gnip:
         for rule in rules:
             rules_xml+=rule.to_xml()
         rules_xml+="</rules>"
-        return self.__do_http_post(url_path, rules_xml)
+        return self.__parse_response(self.__do_http_post(url_path, rules_xml))
 
     def remove_rule_from_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Remove a rule from a Gnip filter.
@@ -235,7 +199,7 @@ class Gnip:
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
 
-        return self.__do_http_delete(url_path)
+        return self.__parse_response(self.__do_http_delete(url_path))
 
     def rule_exists_in_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Check if a rule exists in a Gnip filter.
@@ -258,9 +222,9 @@ class Gnip:
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
 
         result = self.__do_http_get(url_path)
-        if (result[0] == 200):
+        if (result.status == 200):
             return True
-        elif (result[0] == 404):
+        elif (result.status == 404):
             return False
         else:
             return None
@@ -282,7 +246,7 @@ class Gnip:
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.__do_http_delete(url_path)
+        return self.__parse_response(self.__do_http_delete(url_path))
 
     def find_filter(self, publisher_scope, publisher_name, name):
         """Find a Gnip filter.
@@ -300,31 +264,8 @@ class Gnip:
 
         """
 
-        xml = self.find_filter_xml(publisher_scope, publisher_name, name)
-        if "<error>" in xml:
-            return None
-        the_filter = filter.Filter()
-        the_filter.from_xml( xml)
-        return the_filter
-
-    def find_filter_xml(self, publisher_scope, publisher_name, name):
-        """Find a Gnip filter.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type publisher_name string
-        @param publisher_name The publisher to create filter for
-        @type name string
-        @param name The name of the filter to find
-        @return string containing response from the server
-
-        Finds an existing filter and returns the XML representation
-        of that filter.
-
-        """
-
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.__do_http_get(url_path)[1]
+        return self.__parse_response(self.__do_http_get(url_path), filter.Filter())
 
     def get_publisher_activities(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
@@ -343,49 +284,16 @@ class Gnip:
         Note that all times need to be in UTC.
 
         """
-
-        xml = self.get_publisher_activities_xml(publisher_name, date_and_time)
-        root = fromstring(xml)
-        activity_nodes = root.findall("activity")
-        activities = []
-        for node in activity_nodes:
-            activity_string = tostring(node)
-            an_activity = activity.Activity()
-            an_activity.from_xml(activity_string)
-            activities.append(an_activity)
-        return activities
-
-    def get_publisher_activities_xml(self, publisher_scope, publisher_name, date_and_time=None):
-        """Get the data for a publisher.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type publisher_name string
-        @param publisher_name The publisher of the data
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return string containing response from the server
-
-        Gets all of the data for a specific publisher, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used. 
-        Note that all times need to be in UTC.
-
-        """
-
         if None == date_and_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
-    
+
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
                 "/activity/" + time_string + ".xml"
 
-        xml = self.__do_http_get(url_path)[1]
-        print xml
-
-        return xml 
+        return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
     def get_filter_activities(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
@@ -406,49 +314,17 @@ class Gnip:
         Note that all times need to be in UTC.
 
         """
-
-        xml = self.get_filter_activities_xml(publisher_name, name, date_and_time)
-        root = fromstring(xml)
-        activity_nodes = root.findall("activity")
-        activities = []
-        for node in activity_nodes:
-            activity_string = tostring(node)
-            an_activity = activity.Activity()
-            an_activity.from_xml(activity_string)
-            activities.append(an_activity)
-        return activities
-
-    def get_filter_activities_xml(self, publisher_scope, publisher_name, name, date_and_time=None):
-        """Get a Gnip filter.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type name string
-        @param name The name of the filter to get
-        @type publisher_name string
-        @param publisher_name The publisher of the filter
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return string containing response from the server
-
-        Gets all of the data for a specific filter, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used.
-        Note that all times need to be in UTC.
-
-        """
-
         if None == date_and_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
-    
+
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
                 time_string + ".xml"
 
-        return self.__do_http_get(url_path)[1]
-    
+        return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
+
     def get_publisher_notifications(self, publisher_scope, publisher_name, date_and_time=None):
         """Get the data for a publisher.
 
@@ -466,46 +342,15 @@ class Gnip:
         Note that all times need to be in UTC.
 
         """
-
-        xml = self.get_publisher_notifications_xml(publisher_scope, publisher_name, date_and_time)
-        root = fromstring(xml)
-        activity_nodes = root.findall("activity")
-        activities = []
-        for node in activity_nodes:
-            activity_string = tostring(node)
-            an_activity = activity.Activity()
-            an_activity.from_xml(activity_string)
-            activities.append(an_activity)
-        return activities
-
-    def get_publisher_notifications_xml(self, publisher_scope, publisher_name, date_and_time=None):
-        """Get the data for a publisher.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type publisher string
-        @param publisher The publisher of the data
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return string containing response from the server
-
-        Gets all of the data for a specific publisher, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used. 
-        Note that all times need to be in UTC.
-
-        """
-
         if None == date_and_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
-    
-            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
-                "/notification/" + time_string + ".xml"
 
-        return self.__do_http_get(url_path)[1]
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/notification/" + time_string + ".xml"
+
+        return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
     def get_filter_notifications(self, publisher_scope, publisher_name, name, date_and_time=None):
         """Get a Gnip filter.
@@ -526,48 +371,15 @@ class Gnip:
         Note that all times need to be in UTC.
 
         """
-
-        xml = self.get_filter_notifications_xml(publisher_scope, publisher_name, name, date_and_time)
-        root = fromstring(xml)
-        activity_nodes = root.findall("activity")
-        activities = []
-        for node in activity_nodes:
-            activity_string = tostring(node)
-            an_activity = activity.Activity()
-            an_activity.from_xml(activity_string)
-            activities.append(an_activity)
-        return activities
-
-    def get_filter_notifications_xml(self, publisher_scope, publisher_name, name, date_and_time=None):
-        """Get a Gnip filter.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type name string
-        @param name The name of the filter to get
-        @type publisher_name string
-        @param publisher_name The publisher of the filter
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return string containing response from the server
-
-        Gets all of the data for a specific filter, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used.
-        Note that all times need to be in UTC.
-
-        """
-
         if None == date_and_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/current.xml"
         else:
             corrected_time = self.sync_clock(date_and_time)
             time_string = self.time_to_string(corrected_time)
-    
-            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + \
-                time_string + ".xml"
 
-        return self.__do_http_get(url_path)[1]
+            url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + time_string + ".xml"
+
+        return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
     def update_filter(self, publisher_scope, publisher_name, filter_to_update):
         """Update a Gnip filter.
@@ -584,30 +396,9 @@ class Gnip:
         passed in parameters.
 
         """
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_to_update.name + ".xml"
+        return self.__parse_response(self.__do_http_put(url_path, filter_to_update.to_xml()))
 
-        return self.update_filter_from_xml(publisher_scope, publisher_name, filter_to_update.name, filter_to_update.to_xml())
-
-    def update_filter_from_xml(self, publisher_scope, publisher_name, name, data):
-        """Update a Gnip filter.
-
-        @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
-        @type name string
-        @param name The name of the filter to update
-        @type publisher_name string
-        @param publisher_name The publisher of the filter
-        @type data string
-        @param XML data formatted to Gnip filter schema
-        @return string containing response from the server
-
-        Updates a filter on the Gnip server, based on the
-        passed in parameters.
-
-        """
-
-        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
-        return self.__do_http_put(url_path, data)
-    
     def create_publisher(self, publisher):
         """Create a Gnip publisher.
 
@@ -621,24 +412,7 @@ class Gnip:
         """
 
         url_path = "/my/publishers"
-        return self.__do_http_post(url_path, publisher.to_xml())
-    
-    def create_publisher_from_xml(self, name, data):
-        """Create a Gnip publisher.
-
-        @type name string
-        @param name The name of the publisher to create
-        @type data string
-        @param data XML formatted to Gnip publisher schema
-        @return string containing response from the server
-
-        Creates a new publisher on the Gnip server, based on the
-        passed in parameters.
-
-        """
-
-        url_path = "/my/publishers"
-        return self.__do_http_post(url_path, data)
+        return self.__parse_response(self.__do_http_post(url_path, publisher.to_xml()))
     
     def get_publisher(self, scope, name):
         """Get a Gnip publisher.
@@ -653,28 +427,9 @@ class Gnip:
 
         """
 
-        xml = self.get_publisher_xml(scope, name)
-        pub = publisher.Publisher()
-        pub.from_xml(xml)
-
-        return pub
-    
-    def get_publisher_xml(self, scope, name):
-        """Get a Gnip publisher.
-
-        @type scope string
-        @param scope The scope of the publisher (my, public or gnip)
-        @type name string
-        @param name Name of the publisher to get
-        @return string containing response from the server
-
-        Gets a publisher from the Gnip server.
-
-        """
-
         url_path = "/" + scope + "/publishers/" + name + ".xml"
-        return self.__do_http_get(url_path)[1]
-    
+        return self.__parse_response(self.__do_http_get(url_path),publisher.Publisher())
+
     def update_publisher(self, publisher):
         """Update a Gnip filter.
 
@@ -689,35 +444,10 @@ class Gnip:
 
         """
 
-        return self.update_publisher_from_xml(publisher.name, publisher.to_xml())
-
-    def update_publisher_from_xml(self, name, data):
-        """Update a Gnip filter.
-
-        @type name string
-        @param name The name of the publisher to update
-        @type data string
-        @param XML data formatted to Gnip publisher schema
-        @return string containing response from the server
-
-        Updates a filter on the Gnip server, based on the
-        passed in parameters.
-
-        """
-
-        url_path = "/my/publishers/" + name + ".xml"
-        return self.__do_http_put(url_path, data)
+        url_path = "/my/publishers/" + publisher.name + ".xml"
+        return self.__parse_response(self.__do_http_put(url_path, publisher.to_xml()))
 
     def __compress_with_gzip(self, string):
-        """Compress a string with GZIP
-
-        @type string string
-        @param string The data to compress
-        @return string gzipped data
-
-        Does a proper gzip of the incoming string and returns it as a string
-
-        """
 
         zbuf = StringIO.StringIO()
         zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=9)
@@ -726,80 +456,49 @@ class Gnip:
         return zbuf.getvalue()
 
     def __do_http_delete(self, url_path):
-        """Do a HTTP DELETE.
-
-        @type url_path string
-        @param url_path The URL to DELETE
-        @return string representing page retrieved
-
-        Does a HTTP DELETE request of the passed in url, and returns
-        the result from the server.
-
-        """
 
         self.client.delete(self.base_url + url_path)
-        return self.client.response.body
+        return self.client.response
 
     def __do_http_get(self, url_path):
-        """Do a HTTP GET.
-
-        @type url_path string
-        @param url_path The URL to GET
-        @return string representing page retrieved
-
-        Does a HTTP GET request of the passed in url, and returns
-        the result from the server.
-
-        """
 
         self.client.get(self.base_url + url_path)
-        return (self.client.response.status, self.client.response.body)
+        return self.client.response
 
     def __do_http_head(self):
-        """Do a HTTP HEAD.
-
-        @return response object
-
-        Does a HTTP HEAD request of the Gnip Server
-
-        """
 
         self.client.head(self.base_url)
         return self.client.response
 
     def __do_http_post(self, url_path, data):
-        """Do a HTTP POST.
-
-        @type url_path string
-        @param url_path The URL to POST to
-        @type data string in XML format
-        @param data Formatted POST data
-        @return string representing page retrieved
-
-        Does a HTTP POST request of the passed in url and data, and returns
-        the result from the server.
-
-        """
 
         self.client.post(self.base_url + url_path, self.__compress_with_gzip(data))
-        return self.client.response.body
+        return self.client.response
 
     def __do_http_put(self, url_path, data):
-        """Do a HTTP PUT.
-
-        @type url_path string
-        @param url_path The URL to PUT to
-        @type data string in XML format
-        @param data Formatted PUT data
-        @return string representing page retrieved
-
-        Does a HTTP PUT request of the passed in url and data, and returns
-        the result from the server.
-
-        """
 
         self.client.put(self.base_url + url_path, self.__compress_with_gzip(data))
-        return self.client.response.body
+        return self.client.response
+
+    def __parse_response(self, response, data_object=None):
+        if (response.status == 200):
+            if data_object is None:
+                return Response(response.status, self.__parse_result(response.body))
+            else:
+                data_object.from_xml(response.body)
+                return Response(response.status, data_object)
+        else:
+            return Response(response.status, self.__parse_error(response.body))
+
+    def __parse_error(self, error_xml):
+        error = Error()
+        error.from_xml(error_xml)
+        return error
+
+    def __parse_result(self, result_xml):
+        result = Result()
+        result.from_xml(result_xml)
+        return result
                 
 if __name__=="__main__":
 
