@@ -3,10 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name="gnip",
     version="2.1.0",
-
-    packages=find_packages('gnip'),
-    package_dir={'gnip':'.'},
-
+    packages=['gnip'],
+    package_dir={'gnip': 'gnip'},
+    package_data={'gnip': ['gnip.properties']},
     install_requires = [
             'iso8601 == 0.1.4',
             'pyjavaproperties == 0.3',
