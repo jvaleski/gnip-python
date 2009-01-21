@@ -11,6 +11,6 @@ setup(
             'iso8601 == 0.1.4',
             'pyjavaproperties == 0.3',
             'elementtree == 1.2.7_20070827_preview',
-            'davclient == 0.2.0'
+            'httplib2 == 0.4'
     ]
 )

@@ -3,12 +3,12 @@ import activity
 import filter
 import publisher
 import datetime
-import davclient
 import iso8601
 import time
 import gzip
 import StringIO
 import logging
+import httplib2
 from elementtree.ElementTree import *
 from pyjavaproperties import Properties
 from xml_objects import *
@@ -48,14 +48,16 @@ class Gnip:
             self.base_url = gnip_server
         
         self.tunnel_over_post = bool(p['gnip.tunnel.over.post=false'])
-        
+
         # Configure authentication
-        self.client = davclient.DAVClient(self.base_url)
-        self.client.set_basic_auth(username,password)
-        self.client.headers['Accept'] = 'gzip, application/xml'
-        self.client.headers['User-Agent'] = 'Gnip-Client-Python/2.1.0'
-        self.client.headers['Content-Encoding'] = 'gzip'
-        self.client.headers['Content-Type'] = 'application/xml'
+        self.client = httplib2.Http(timeout = int(p['gnip.http.timeout']))
+        self.client.add_credentials(username, password)
+
+        self.headers = {}
+        self.headers['Accept'] = 'gzip, application/xml'
+        self.headers['User-Agent'] = 'Gnip-Client-Python/2.1.0'
+        self.headers['Content-Encoding'] = 'gzip'
+        self.headers['Content-Type'] = 'application/xml'
 
     def sync_clock(self, time):
         """Adjust a time so that it corresponds with Gnip time
@@ -72,15 +74,14 @@ class Gnip:
         """
 
         # Do HTTP HEAD request
-        resp = self.__do_http_head()
+        resp, content = self.__do_http_head()
 
         # Get local time, before we do any other processing
         # so that we can get the two times as close as possible
         local_time = datetime.datetime.utcnow()
 
         # Get time from headers and parse into python format
-        gnip_time = datetime.datetime.strptime(
-            resp.getheader("Date"), "%a, %d %b %Y %H:%M:%S %Z")
+        gnip_time = datetime.datetime.strptime(resp["Date"], "%a, %d %b %Y %H:%M:%S %Z")
 
         # Determine the time difference
         time_delta = gnip_time - local_time
@@ -224,10 +225,10 @@ class Gnip:
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
 
-        result = self.__do_http_get(url_path)
-        if (result.status == 200):
+        response, body = self.__do_http_get(url_path)
+        if (response.status == 200):
             return True
-        elif (result.status == 404):
+        elif (response.status == 404):
             return False
         else:
             return None
@@ -460,58 +461,55 @@ class Gnip:
         return zbuf.getvalue()
 
     def __do_http_head(self):
-        self.client.head(self.base_url)
-        return self.client.response
+        return self.client.request(self.base_url, "HEAD", headers=self.headers)
 
     def __do_http_get(self, url_path, query_string = None):
         url = self.base_url + url_path
         if query_string is not None:
             url+="?" + query_string
-        self.client.get(url)
-        return self.client.response
+        return self.client.request(url, "GET", headers=self.headers)
 
     def __do_http_post(self, url_path, data, query_string = None):
         url = self.base_url + url_path
         if query_string is not None:
             url+="?" + query_string
-        self.client.post(url, self.__compress_with_gzip(data))
-        return self.client.response
+        return self.client.request(url, "POST", headers=self.headers, body=self.__compress_with_gzip(data))
 
     def __do_http_put(self, url_path, data, query_string = None):
+        url = self.base_url + url_path
         if (self.tunnel_over_post):
-            url = self.base_url + url_path + ';edit'
-            if query_string is not None:
-                url+="?" + query_string
-            self.client.post(url, self.__compress_with_gzip(data))
-        else :
-            url = self.base_url + url_path
-            if query_string is not None:
-                url+="?" + query_string
-            self.client.put(url, self.__compress_with_gzip(data))
-        return self.client.response
+            url += ';edit'
+            verb = "POST"
+        else:
+            verb = "PUT"
+
+        if query_string is not None:
+            url+="?" + query_string
+
+        return self.client.request(url, verb, headers=self.headers, body=self.__compress_with_gzip(data))
 
     def __do_http_delete(self, url_path, query_string = None):
+        url = self.base_url + url_path
         if (self.tunnel_over_post):
-            url = self.base_url + url_path + ';delete'
-            if query_string is not None:
-                url+="?" + query_string
-            self.client.post(url, self.__compress_with_gzip(" "))
-        else :
-            url = self.base_url + url_path
-            if query_string is not None:
-                url+="?" + query_string
-            self.client.delete(url)
-        return self.client.response
+            url += ';delete'
+            verb = "POST"
+        else:
+            verb = "DELETE"
+
+        if query_string is not None:
+            url+="?" + query_string
+
+        return self.client.request(url, verb, headers=self.headers, body=self.__compress_with_gzip(" "))
 
     def __parse_response(self, response, data_object=None):
-        if (response.status == 200):
+        if (response[0].status == 200):
             if data_object is None:
-                return Response(response.status, self.__parse_result(response.body))
+                return Response(response[0].status, self.__parse_result(response[1]))
             else:
-                data_object.from_xml(response.body)
-                return Response(response.status, data_object)
+                data_object.from_xml(response[1])
+                return Response(response[0].status, data_object)
         else:
-            return Response(response.status, self.__parse_error(response.body))
+            return Response(response[0].status, self.__parse_error(response[1]))
 
     def __parse_error(self, error_xml):
         logging.info("Parsing error from XML: " + error_xml)

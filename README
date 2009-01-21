@@ -12,7 +12,7 @@ These 3rd party libraries are required by the Gnip Client:
 - iso8601-0.1.4 - http://pypi.python.org/pypi/iso8601
 - pyjavaproperties-0.3 - http://pypi.python.org/pypi/pyjavaproperties/0.3
 - elementtree-1.2.7_20070827_preview - http://effbot.org/zone/element-index.htm
-- davclient-0.2.0 - http://chandlerproject.org/Projects/Davclient
+- httplib2-0.4 - http://code.google.com/p/httplib2/
 
 == Install ==
 
