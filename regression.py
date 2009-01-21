@@ -22,7 +22,7 @@ sys.path.append(".")
 sys.path.append("./test")
 
 def regressionTest():
-    logging.getLogger('').setLevel(logging.INFO)
+    logging.getLogger('').setLevel(logging.WARN)
     path = os.path.abspath(os.path.dirname(sys.argv[0])) + "/test"
     logging.debug("Searching for tests in " + path)
     files = os.listdir(path)

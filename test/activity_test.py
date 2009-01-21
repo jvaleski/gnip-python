@@ -11,7 +11,7 @@ import logging
 
 class ActivityTestCase(unittest.TestCase):
     def setUp(self):
-        logging.getLogger('').setLevel(logging.INFO)
+        logging.getLogger('').setLevel(logging.WARN)
         index = int(__file__.rfind("/"))
         basedir = __file__[0:index]
         #logging.info("Loading XML files from: " + basedir)

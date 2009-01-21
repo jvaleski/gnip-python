@@ -8,6 +8,7 @@ import iso8601
 import time
 import gzip
 import StringIO
+import logging
 from elementtree.ElementTree import *
 from pyjavaproperties import Properties
 from xml_objects import *
@@ -45,6 +46,8 @@ class Gnip:
             self.base_url = p['gnip.server']
         else:
             self.base_url = gnip_server
+        
+        self.tunnel_over_post = bool(p['gnip.tunnel.over.post=false'])
         
         # Configure authentication
         self.client = davclient.DAVClient(self.base_url)
@@ -197,9 +200,9 @@ class Gnip:
         passed in parameters.
         """
 
-        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules"
 
-        return self.__parse_response(self.__do_http_delete(url_path))
+        return self.__parse_response(self.__do_http_delete(url_path, rule.to_delete_query_string()))
 
     def rule_exists_in_filter(self, publisher_scope, publisher_name, filter_name, rule):
         """Check if a rule exists in a Gnip filter.
@@ -448,36 +451,56 @@ class Gnip:
         return self.__parse_response(self.__do_http_put(url_path, publisher.to_xml()))
 
     def __compress_with_gzip(self, string):
-
+        if (string is None or len(string) is 0):
+            return ""
         zbuf = StringIO.StringIO()
         zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=9)
         zfile.write(string)
         zfile.close()
         return zbuf.getvalue()
 
-    def __do_http_delete(self, url_path):
-
-        self.client.delete(self.base_url + url_path)
-        return self.client.response
-
-    def __do_http_get(self, url_path):
-
-        self.client.get(self.base_url + url_path)
-        return self.client.response
-
     def __do_http_head(self):
-
         self.client.head(self.base_url)
         return self.client.response
 
-    def __do_http_post(self, url_path, data):
-
-        self.client.post(self.base_url + url_path, self.__compress_with_gzip(data))
+    def __do_http_get(self, url_path, query_string = None):
+        url = self.base_url + url_path
+        if query_string is not None:
+            url+="?" + query_string
+        self.client.get(url)
         return self.client.response
 
-    def __do_http_put(self, url_path, data):
+    def __do_http_post(self, url_path, data, query_string = None):
+        url = self.base_url + url_path
+        if query_string is not None:
+            url+="?" + query_string
+        self.client.post(url, self.__compress_with_gzip(data))
+        return self.client.response
 
-        self.client.put(self.base_url + url_path, self.__compress_with_gzip(data))
+    def __do_http_put(self, url_path, data, query_string = None):
+        if (self.tunnel_over_post):
+            url = self.base_url + url_path + ';edit'
+            if query_string is not None:
+                url+="?" + query_string
+            self.client.post(url, self.__compress_with_gzip(data))
+        else :
+            url = self.base_url + url_path
+            if query_string is not None:
+                url+="?" + query_string
+            self.client.put(url, self.__compress_with_gzip(data))
+        return self.client.response
+
+    def __do_http_delete(self, url_path, query_string = None):
+        if (self.tunnel_over_post):
+            url = self.base_url + url_path + ';delete'
+            if query_string is not None:
+                url+="?" + query_string
+            self.client.post(url, self.__compress_with_gzip(" "))
+        else :
+            url = self.base_url + url_path
+            if query_string is not None:
+                url+="?" + query_string
+            self.client.delete(url)
         return self.client.response
 
     def __parse_response(self, response, data_object=None):
@@ -491,6 +514,7 @@ class Gnip:
             return Response(response.status, self.__parse_error(response.body))
 
     def __parse_error(self, error_xml):
+        logging.info("Parsing error from XML: " + error_xml)
         error = Error()
         error.from_xml(error_xml)
         return error

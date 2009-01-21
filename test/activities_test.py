@@ -12,7 +12,7 @@ import random
 
 class ActivityTestCase(unittest.TestCase):
     def setUp(self):
-        logging.getLogger('').setLevel(logging.INFO)
+        logging.getLogger('').setLevel(logging.WARN)
         
     def testActivitiesXmlParses(self):
         randVal1 = str(random.randint(1, 99999999))        

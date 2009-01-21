@@ -31,6 +31,7 @@ class GnipTestCase(unittest.TestCase):
         self.filterFullData = None
     
     def setUp(self):
+        self.gnip.tunnel_over_post = False
         self.filterXml = \
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +\
             '<filter fullData="true" name="test">' + \
@@ -148,7 +149,11 @@ class GnipTestCase(unittest.TestCase):
         self.assertEqual(200, response.code)
         self.assertEqual(self.success, response.result)
 
-    def testRemoveRuleFromFilter(self):
+    def testUpdateFilterOverPost(self):
+        self.gnip.tunnel_over_post = True
+        self.testUpdateFilter()
+
+    def testDeleteRuleFromFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         expected_rule = Rule(type="actor", value="you")
@@ -158,6 +163,10 @@ class GnipTestCase(unittest.TestCase):
 
         a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name).result
         self.assertFalse(expected_rule in a_filter_with_new_rule.rules)
+
+    def testDeleteRuleFromFilterOverPost(self):
+        self.gnip.tunnel_over_post = True
+        self.testDeleteRuleFromFilter()
 
     def testRuleSearchFromFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
@@ -182,7 +191,7 @@ class GnipTestCase(unittest.TestCase):
         a_filter_with_new_rule = self.gnip.find_filter(self.testpublisherscope, self.testpublisher, a_filter.name).result
         self.assertTrue(expected_rule in a_filter_with_new_rule.rules)
 
-    def testBatchUpdateOfFilterRules(self):
+    def testAddBatchUpdateOfFilterRules(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
         self.gnip.create_filter(self.testpublisherscope, self.testpublisher, a_filter)
         new_rules = [Rule("actor","jud"), Rule("actor","eddie"), Rule("actor","alex")]
@@ -206,6 +215,10 @@ class GnipTestCase(unittest.TestCase):
         response = self.gnip.delete_filter(self.testpublisherscope, self.testpublisher, self.filterName)
         self.assertEqual(200, response.code)
         self.assertEqual(self.success, response.result)
+
+    def testDeleteFilterOverPost(self):
+        self.gnip.tunnel_over_post = True
+        self.testDeleteFilter()
 
     def testFindFilter(self):
         a_filter = filter.Filter(name=self.filterName, rules=self.rules, full_data=self.filterFullData)
@@ -234,6 +247,10 @@ class GnipTestCase(unittest.TestCase):
         response = self.gnip.get_publisher(self.testpublisherscope, self.testpublisher)
         self.assertEqual(200, response.code)
         self.assertEquals(expected_publisher, response.result)
+
+    def testUpdatePublisherOverPost(self):
+        self.gnip.tunnel_over_post = True
+        self.testUpdatePublisher()
 
 if __name__ == '__main__':
     unittest.main()
