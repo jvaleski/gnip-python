@@ -232,14 +232,14 @@ class GnipTestCase(unittest.TestCase):
         self.assertEqual(200, response.code)
         self.assertEquals(self.testpublisher, response.result.name)
 
-    def testCreatePublisher(self):
-        randVal = str(random.randint(1, 99999999))
-        expected_publisher = publisher.Publisher(self.testpublisher + randVal, ['actor', 'tag'])
-        self.gnip.create_publisher(expected_publisher)
-
-        response = self.gnip.get_publisher(self.testpublisherscope, self.testpublisher + randVal)
-        self.assertEqual(200, response.code)
-        self.assertEquals(expected_publisher, response.result)
+#    def testCreatePublisher(self):
+#        randVal = str(random.randint(1, 99999999))
+#        expected_publisher = publisher.Publisher(self.testpublisher + randVal, ['actor', 'tag'])
+#        self.gnip.create_publisher(expected_publisher)
+#
+#        response = self.gnip.get_publisher(self.testpublisherscope, self.testpublisher + randVal)
+#        self.assertEqual(200, response.code)
+#        self.assertEquals(expected_publisher, response.result)
         
     def testUpdatePublisher(self):
         expected_publisher = publisher.Publisher(self.testpublisher, ['actor', 'tag'])
