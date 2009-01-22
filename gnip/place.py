@@ -2,7 +2,10 @@ from elementtree.ElementTree import *
 import xml_objects
 
 class Place(object):
-    """Gnip Place container class"""
+    """Gnip Place container class.
+    
+    A Place represents the geo information in a Gnip Activity.
+    """
 
     def __init__(self, point=None, elev=None, floor=None, feature_type_tag=None, feature_name=None, relationship_tag=None):
         """Initialize the class.
@@ -20,9 +23,6 @@ class Place(object):
         @type relationship_tag string
         @param relationship_tag Additional georss property indicating the relationship of the accompanying geometric property to the referenced geographic entity.
 
-        
-        Initializes the class with the proper variables.
-
         """
 
         self.point = point
@@ -33,7 +33,11 @@ class Place(object):
         self.relationship_tag = relationship_tag
 
     def from_xml_node(self, place_xml_node):
-        """ Populates place from a place xml node """
+        """ Populates place from a place xml node
+        
+        @type place_xml_node Element
+        @param place_xml_node an Element representing the place
+        """
 
         if place_xml_node is not None:
 

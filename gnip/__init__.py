@@ -15,9 +15,10 @@ from xml_objects import *
 from response import *
 
 class Gnip:
-    """Common functionality between all Gnip classes
-
-    This class provides basic functionality help for all Gnip classes.
+    """Provides the primary interface to the Gnip service.
+    
+    Provides an authenticated connection between your code, and the Gnip servers.
+    Gnip's primary functionality is provided through this class.
 
     """
 
@@ -25,14 +26,14 @@ class Gnip:
         """Initialize the class.
 
         @type username string
-        @param username The Gnip account username
+        @param username Your Gnip account username
         @type password string
-        @param password The Gnip account password
+        @param password Your Gnip account password
         @type gnip_server string
         @param gnip_server The Gnip server to connect to
 
-        Initializes a Gnip class by setting up authorization
-        information, used to log into the Gnip website.
+        Initializes a Gnip class by setting up authentication
+        information, used to log into the Gnip service.
 
         """
 
@@ -59,17 +60,19 @@ class Gnip:
         self.headers['Content-Encoding'] = 'gzip'
         self.headers['Content-Type'] = 'application/xml'
 
-    def sync_clock(self, time):
+    def sync_clock(self, datetime):
         """Adjust a time so that it corresponds with Gnip time
 
-        @type time datetime
-        @param time The time to adjust
-        @return datetime object containing the corrected time
+        @type datetime datetime
+        @param datetime The datetime object to adjust
+        @return datetime object representing the corrected time
 
         This method gets the current time from the Gnip server,
         gets the current local time and determines the difference 
         between the two. It then adjusts the passed in time to 
-        account for the difference.
+        account for the difference. This method can be used to ensure
+        your application's time is in sync with Gnip server time in
+        order to prevent clock drift between the two.
 
         """
 
@@ -90,30 +93,32 @@ class Gnip:
         return time + time_delta
 
     def time_to_string(self, time):
-        """Convert the time to a formatted string.
+        """Convert the time to a Gnip bucket formatted string.
 
-        @type theTime datetime
-        @param theTime The time to convert to a string
+        @type time time
+        @param time The time object to convert to a string
         @return string representing time
 
         Converts the time passed in to a string of the
-        form YYYYMMDDHHMM.
+        form YYYYMMDDHHMM. Gnip uses this string format for
+        notification/activity bucket specification.
 
         """
 
         return str(time.strftime("%Y%m%d%H%M"))
 
     def publish_activities(self, publisher_name, activities):
-        """Publish activities.
+        """Publish the provided activities to Gnip.
 
         @type publisher_name string
-        @param publisher_name string The name of the publisher
+        @param publisher_name string The name of the publisher to
+            receive the activities. You must be the owner of the publisher.
         @type activities list of Activity objects
-        @param activities The activities to publish
+        @param activities The activities to be published
         @return string containing response from the server
 
-        This method takes in a XML document with a list of activities and 
-        sends it to the Gnip server.
+        This method allows a publisher to publish activities to the Gnip
+        service. You can only publish activities to a publisher that you own.
 
         """
 
@@ -121,39 +126,33 @@ class Gnip:
         return self.__parse_response(self.__do_http_post(url_path, activities.to_xml()))
 
     def create_filter(self, publisher_scope, publisher_name, filter):
-        """Create a Gnip filter.
+        """Create a Filter on the Gnip service.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip")  
         @type publisher_name string
-        @param publisher_name The publisher to create filter for
+        @param publisher_name The publisher that the Filter will be applied to.
         @type filter Filter
         @param filter A populated Filter object
         @return string containing response from the server
 
-        Creates a new filter on the Gnip server, based on the
-        passed in filter.
-
+        Creates a new filter, specific to your account, on the Gnip service.
         """
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters.xml"
         return self.__parse_response(self.__do_http_post(url_path, filter.to_xml()))
 
     def add_rule_to_filter(self, publisher_scope, publisher_name, filter_name, rule):
-        """Add a rule to a Gnip filter.
+        """Add a rule to a pre-existing Gnip filter.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip")  
         @type publisher_name string
         @param publisher_name The publisher of the filter to update
-        @type data string
+        @type filter_name string
         @param filter_name The filter to update
-        @type data string
-        @param rule a new Rule to add
+        @type rule string
+        @param rule a Rule object to add
         @return string containing response from the server
-
-        Add new rule to a filter on the Gnip server, based on the
-        passed in parameters.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
@@ -163,18 +162,14 @@ class Gnip:
         """Add rules to a Gnip filter.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip")  
         @type publisher_name string
         @param publisher_name The publisher of the filter to update
-        @type data string
+        @type filter_name string
         @param filter_name The filter to update
-        @type data string
-        @param rules a new Rules to add
+        @type rules List of Rule objects
+        @param rules List of Rule objects
         @return string containing response from the server
-
-        Add rules to a filter on the Gnip server, based on the
-        passed in parameters.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules.xml"
@@ -188,17 +183,14 @@ class Gnip:
         """Remove a rule from a Gnip filter.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip")  
         @type publisher_name string
         @param publisher_name The publisher of the filter to update
-        @type data string
+        @type filter_name string
         @param filter_name The filter to update
-        @type data string
+        @type rule string
         @param rule a Rule to remove
         @return string containing response from the server
-
-        Remove a rule from a filter on the Gnip server, based on the
-        passed in parameters.
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules"
@@ -206,21 +198,17 @@ class Gnip:
         return self.__parse_response(self.__do_http_delete(url_path, rule.to_delete_query_string()))
 
     def rule_exists_in_filter(self, publisher_scope, publisher_name, filter_name, rule):
-        """Check if a rule exists in a Gnip filter.
+        """Determine whether or not a given rule exists in an existing Filter.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip") 
         @type publisher_name string
         @param publisher_name The publisher of the filter to update
-        @type data string
+        @type filter_name string
         @param filter_name The filter to check
-        @type data string
+        @type rule string
         @param rule a Rule to check
         @return boolean as to the existance of the rule, None if existance of the rule can't be determined
-
-        Check if a rule exists in a filter on the Gnip server, based on the
-        passed in parameters.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_name + "/rules?" + rule.to_delete_query_string()
@@ -237,61 +225,53 @@ class Gnip:
         """Delete a Gnip filter.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip") 
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type name string
         @param name The name of the filter to delete
         @return string containing response from the server
-
-        Deletes an existing filter on the Gnip server, based on the
-        name of the filter.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
         return self.__parse_response(self.__do_http_delete(url_path))
 
     def find_filter(self, publisher_scope, publisher_name, name):
-        """Find a Gnip filter.
+        """Find an account specific Filter in Gnip.
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip") 
         @type publisher_name string
         @param publisher_name The publisher to create filter for
         @type name string
         @param name The name of the filter to find
         @return string containing response from the server
-
-        Finds an existing filter and returns a Filter representing
-        that filter.
-
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
         return self.__parse_response(self.__do_http_get(url_path), filter.Filter())
 
-    def get_publisher_activities(self, publisher_scope, publisher_name, date_and_time=None):
-        """Get the data for a publisher.
+    def get_publisher_activities(self, publisher_scope, publisher_name, date_time=None):
+        """Get a Publisher's Activities (as opposed to Notifications).
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip") 
         @type publisher_name string
-        @param publisher_name The publisher of the data
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return list of Activity objects, one for each activity retrieved
+        @param publisher_name The publisher you want Activities for.
+        @type date_time datetime
+        @param date_time The datetime for which data should be retrieved
+        @return List of Activity objects, one for each activity retrieved
 
-        Gets all of the data for a specific publisher, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used. 
-        Note that all times need to be in UTC.
-
+        Gets all of the Activities for a specific publisher. You can specify a time
+        (in UTC) from which you would like specific Activities, otherwise the current
+        time will be used.
+        
+        See Also: get_publisher_notifications()
         """
-        if None == date_and_time:
+        if None == date_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/activity/current.xml"
         else:
-            corrected_time = self.sync_clock(date_and_time)
+            corrected_time = self.sync_clock(date_time)
             time_string = self.time_to_string(corrected_time)
 
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + \
@@ -299,29 +279,29 @@ class Gnip:
 
         return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
-    def get_filter_activities(self, publisher_scope, publisher_name, name, date_and_time=None):
-        """Get a Gnip filter.
+    def get_filter_activities(self, publisher_scope, publisher_name, name, date_time=None):
+        """Get Activites (as opposed to Notifications) from a Filter.
 
         @type publisher_scope string
         @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
-        @param name The name of the filter to get
+        @param name The name of the filter you want activities for
         @type publisher_name string
-        @param publisher_name The publisher of the filter
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
+        @param publisher_name The publisher associated with the filter.
+        @type date_time datetime
+        @param date_time The time for which data should be retrieved
         @return string containing response from the server
 
-        Gets all of the data for a specific filter, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used.
-        Note that all times need to be in UTC.
+        Gets all of the Activities for a specific Filter. You can specify a time
+        (in UTC) from which you would like specific Activities, otherwise the current
+        time will be used.
 
+        See Also: get_filter_notifications()
         """
-        if None == date_and_time:
+        if None == date_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/current.xml"
         else:
-            corrected_time = self.sync_clock(date_and_time)
+            corrected_time = self.sync_clock(date_time)
             time_string = self.time_to_string(corrected_time)
 
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/activity/" + \
@@ -329,90 +309,98 @@ class Gnip:
 
         return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
-    def get_publisher_notifications(self, publisher_scope, publisher_name, date_and_time=None):
-        """Get the data for a publisher.
+    def get_publisher_notifications(self, publisher_scope, publisher_name, date_time=None):
+        """Get a Publisher's Notifications (as opposed to Activities).
 
         @type publisher_scope string
-        @param publisher_scope The scope of the publisher (my, public or gnip)  
+        @param publisher_scope The scope of the publisher ("my," "public" or "gnip") 
         @type publisher_name string
-        @param publisher_name The publisher of the data
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
-        @return list of Activity objects, one for each activity retrieved
+        @param publisher_name The publisher you want Notifications for.
+        @type date_time datetime
+        @param date_time The datetime for which data should be retrieved
+        @return List of Activity objects, one for each activity retrieved
 
-        Gets all of the data for a specific publisher, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used. 
-        Note that all times need to be in UTC.
-
+        Gets all of the Notifications for a specific publisher. You can specify a time
+        (in UTC) from which you would like specific Notifications, otherwise the current
+        time will be used.
+        
+        Gnip currently represents both "Activities" and "Notifications" in the same
+        object: Activity. "Notification" and "Activity" Activity objects are identical, with the
+        exception of the "Activity" Activity object containing a payload.
+        
+        See Also: get_publisher_activities()
         """
-        if None == date_and_time:
+        if None == date_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/notification/current.xml"
         else:
-            corrected_time = self.sync_clock(date_and_time)
+            corrected_time = self.sync_clock(date_time)
             time_string = self.time_to_string(corrected_time)
 
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/notification/" + time_string + ".xml"
 
         return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
-    def get_filter_notifications(self, publisher_scope, publisher_name, name, date_and_time=None):
-        """Get a Gnip filter.
+    def get_filter_notifications(self, publisher_scope, publisher_name, name, date_time=None):
+        """Get Notifications (as opposed to Activities) from a Filter.
 
         @type publisher_scope string
         @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type name string
-        @param name The name of the filter to get
+        @param name The name of the filter you want Notifications for
         @type publisher_name string
-        @param publisher_name The publisher of the filter
-        @type date_and_time datetime
-        @param date_and_time The time for which data should be retrieved
+        @param publisher_name The publisher associated with the filter.
+        @type date_time datetime
+        @param date_time The time for which data should be retrieved
         @return string containing response from the server
 
-        Gets all of the data for a specific filter, based on the
-        date_and_time parameter, which should be a datetime object. If
-        date_and_time is not passed in, the current time will be used.
-        Note that all times need to be in UTC.
+        Gets all of the Notifications for a specific Filter. You can specify a time
+        (in UTC) from which you would like specific Notifications, otherwise the current
+        time will be used.
+        
+        Gnip currently represents both "Activities" and "Notifications" in the same
+        object: Activity. "Notification" and "Activity" Activity objects are identical, with the
+        exception of the "Activity" Activity object containing a payload.
 
+        See Also: get_filter_activities()
         """
-        if None == date_and_time:
+        if None == date_time:
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/current.xml"
         else:
-            corrected_time = self.sync_clock(date_and_time)
+            corrected_time = self.sync_clock(date_time)
             time_string = self.time_to_string(corrected_time)
 
             url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + "/notification/" + time_string + ".xml"
 
         return self.__parse_response(self.__do_http_get(url_path), activities.Activities())
 
-    def update_filter(self, publisher_scope, publisher_name, filter_to_update):
+    def update_filter(self, publisher_scope, publisher_name, filter):
         """Update a Gnip filter.
 
         @type publisher_scope string
         @param publisher_scope The scope of the publisher (my, public or gnip)  
         @type publisher_name string
         @param publisher_name The publisher of the filter
-        @type filter_to_update Filter
-        @param filter_to_update A populated Filter object
+        @type filter Filter
+        @param filte A populated Filter object
         @return string containing response from the server
 
-        Creates a new filter on the Gnip server, based on the
-        passed in parameters.
+        Updates the Filter on the Gnip service with the Filter provided.
+        The Filter must already exist on the service.
 
         """
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_to_update.name + ".xml"
         return self.__parse_response(self.__do_http_put(url_path, filter_to_update.to_xml()))
 
     def create_publisher(self, publisher):
-        """Create a Gnip publisher.
+        """Create a Gnip publisher in the "my" scope.
 
         @type publisher Publisher
         @param publisher A populated Publisher object
         @return string containing response from the server
 
-        Creates a new publisher on the Gnip server, based on the
-        passed in publisher object.
-
+        Creates a new publisher on the Gnip server within the "my" publisher scope.
+        The publisher will be visible only to your account, and only you, can
+        publish to it.
         """
 
         url_path = "/my/publishers"
@@ -422,13 +410,15 @@ class Gnip:
         """Get a Gnip publisher.
 
         @type scope string
-        @param scope The scope of the publisher (my, public or gnip)
+        @param scope The scope of the publisher ("my," "public" or "gnip")
         @type name string
-        @param name Name of the publisher to get
+        @param name The name of the publisher to get
         @return Publisher object based on response from the server
 
-        Gets a publisher from the Gnip server.
-
+        Gets a Publisher from the Gnip server. The Publisher object allows
+        you to determine what capabilities a Publisher supports. These
+        capabilities determine what kind of rules you can use when creating
+        a Filter.
         """
 
         url_path = "/" + scope + "/publishers/" + name + ".xml"
@@ -443,9 +433,7 @@ class Gnip:
         @param filter_to_update A populated Filter object
         @return string containing response from the server
 
-        Creates a new filter on the Gnip server, based on the
-        passed in parameters.
-
+        Updates a pre-existing Publisher with the Publisher provided.
         """
 
         url_path = "/my/publishers/" + publisher.name + ".xml"

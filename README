@@ -1,22 +1,52 @@
-== Gnip Python Client ==
+Welcome to the Gnip Python convenience library!
 
-This library provides a Python API for accessing
-Gnip (http://gnipcentral.com) web services.  There are two basic
-roles for using Gnip: subscribers and publishers.  This library
-provides a single interface for both roles.
 
-== Required Libraries ==
 
-These 3rd party libraries are required by the Gnip Client:
+== Overview ==
+This library provides a Python API for accessing Gnip web services.  This library 
+supports activities related to publishing and subscribing to data.
+
+
+
+== Dependencies == 
+The following libraries are required by this library.
 
 - iso8601-0.1.4 - http://pypi.python.org/pypi/iso8601
 - pyjavaproperties-0.3 - http://pypi.python.org/pypi/pyjavaproperties/0.3
 - elementtree-1.2.7_20070827_preview - http://effbot.org/zone/element-index.htm
 - httplib2-0.4 - http://code.google.com/p/httplib2/
 
-== Install ==
 
-  $> sudo python setup.py install
+
+== Installing ==
+Simply run the setup.py script provided.
+
+    % sudo python setup.py install
+
+
+
+== Quick Start ==
+Gnip has a test publisher "gnip-test-publisher":
+https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/notification/
+
+The following example retrieves notification data from the current bucket for 
+"gnip-test-publisher." Please note that the current bucket is not static and 
+therefore will contain a variable amount of data, but you'll get quick feedback 
+to know if you can connect and access the public notification data.
+
+    import gnip
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    response = gnip.get_publisher_notifications("gnip", "gnip-test-publisher")
+    print response.result
+    	
+You should see an Activities object.
+
+
+
+== Debugging == 
+no additional debugging info at this time
+
+
 
 == Running the Client Library Tests ==
 
@@ -28,11 +58,13 @@ that contains the following properties:
 
 gnip.username=your-gnip-username@yourcompany.com
 gnip.password=your-gnip-password
+gnip.test.publisher.scope=my
 gnip.test.publisher=your-test-publisher
+gnip.server=https://prod.gnipcentral.com
 
 Note, for the tests to pass, you must reference a Gnip test publisher that
 exists and that you own and thus can be used for publishing activities 
-from a unit test. 
+from a unit test. The "gnip-test-publisher" does not work for the tests.
 
 For more information about creating a Gnip Publisher, see:
 
@@ -40,86 +72,253 @@ For more information about creating a Gnip Publisher, see:
 
 To run the tests, type:
 
-  $> python regression.py
-
-== Consumer ==
-
-=== Example 1: Retrieve all recent activities at a publisher
-
-As a consumer one thing you might be interested in immediately is to
-grab recent activity at a particular publisher.  To do this you must
-create a connection to Gnip using your user name and password.  Once
-that connection is established you can get the publisher and request
-its activities stream.  
-
-    gnip = Gnip("me@mydomain.com", "my-password")
-    gnip.get_publisher_notifications("digg")
-
-Alternatively, to retrieve the raw XML of the activities, do:
-
-    gnip.get_publisher_notifications_xml("digg")
+  % python regression.py
 
 
-=== Example 2: Retrieve all activities at a publisher around a specific time
-
-Some times you will want to get activity information from before now.
-Doing this look much like getting the recent activity, except that you
-past a time when getting the activity stream.  This will return the
-activity stream as it existed around that time.  The results will be
-include some activities before and after the time you specify.
-
-    gnip = Gnip("me@mydomain.com", "my-password")
-    gnip.get_publisher_notifications("digg", datetime.datetime.utcnow() - 
-        datetime.timedelta(minutes=30)) # 30 minutes ago
 
 
-=== Example 3: Create an activity stream that includes only activities
-    done by users you care about.
+==== Subscriber Actions ====
 
-If you would like to filter a set of publishers by the user that
-performed the activity you may create a filter to do so.  Once
-created a filter's activity stream is retrieved much like a
-publishers.  Activity that has already occured will not be included in
-a filter.  Therefore any new filter will be empty until some
-new matching activity has occured.
+=== Notification vs. Activity ===
 
-Note: Filter names must be unique across the system so you might
-want to attach your username to the logical name of any filters
-you create.
+As a subscriber you can retrieve notification data or activity data. The main 
+difference between these two types of data buckets are:
 
-    gnip = Gnip("me@mydomain.com", "my-password")
+*** Notifications contain a reduced meta-data subset of attributes for an activity
+*** Activities contain full data, including the raw payload. There are some 
+    restrictions on activity data. You can only request unfiltered activities 
+    on publishers that you own (have authorization access to). You can create 
+    filters on any publisher and request activity data.
 
-    my_filter = Filter(name="test-filter", 
-        rules=[["actor", "me"], ["actor", "you"], ["actor", "bob"]])
+=== Example 1: Retrieve all recent activities at a publisher ===
 
-    gnip.create_filter("digg", my_filter)
-    gnip.get_filter_notifications("digg", my_filter)
+As a consumer one thing you might be interested in immediately is
+grabbing data from a publisher. To do this you must create a connection to Gnip 
+using your username and password.  Once the connection is established you can 
+get the publisher and request the stream. These examples uses the publisher 
+"gnip-test-publisher".
 
-=== Example 4: Delete a filter
+*** Notification data stream request ***
 
-If you decide you no longer need a filter you have created in the
-past you can remove it.
-
-    gnip = Gnip("me@mydomain.com", "my-password")
-
-    gnip.delete_filter("digg", "test-filter")
-
-== Publisher
-
-=== Example 1: Create a publisher and publish some activities
-
-If you are interested in publishing activity you will need to create a
-publisher.  Once the publisher resource is created, activities can be
-published in it's activity stream.
-
-    gnip = Gnip("me@mydomain.com", "my-password")
-    gnip.publish("digg")
+    import gnip
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    response = gnip.get_publisher_notifications("gnip", "gnip-test-publisher")
+    print response.result
     
-    activity = Activity("joe", datetime.datetime.utcnow(), "post", 
-        "http://mydomain.com/joe/my-new-blog-post");
-    gnip.publish_activities(my_publisher, [activity])
+You should see an Activities object.
 
-== Contributing
+You can also view the current notifications bucket via web on the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/notification/current.xml
+    
+*** Notification data stream request with optional date param ***
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    print gnip.get_publisher_notifications("gnip-test-publisher", datetime.datetime.utcnow() - datetime.timedelta(minutes=1))
+    
+You can see the running list of notification buckets on the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/notification/
+    
+    
+=== Example 2: Filter notifications or activities by a set of users ===
+
+You can create a filter to stream activity data for the users you care about. 
+Posts from the users that have already occurred will not be included in a 
+filter. Therefore any new filter you create will be empty until the users you 
+specify perform an action (make a tweet, digg a story, create a bookmark in 
+delicious, etc.). 
+
+You can only retrieve activity data (full data) from publishers that you don't own 
+by creating a filter.
+
+The test actor for "gnip-test-publisher" is "joeblow". To test your filter, be sure 
+"joeblow"appears in your rule set.
+
+The following examples illustrate creating filters for both notification and activity 
+data. Additionally, the two examples show how to use/not use the post URL parameter.
+
+*** Notificiation Filter without POST URL ***
+
+Note that the full data (second parameter) of the filter object must be set to 
+false. This example does not include a POST URL, meaning you'll have to poll 
+Gnip for the results when you need them. The following snippet creates (and 
+retrieves) a notification filter called "myNotificationFilter" on the publisher 
+gnip-test-publisher.
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    my_filter = Filter(name="myNotificationFilter", full_data=False, post_url=None,
+        rules=[["actor", "you"], ["actor", "mary"], ["actor", "joeblow"]])
+    gnip.create_filter("gnip", "gnip-test-publisher", my_filter)
+    print gnip.get_filter_notifications("gnip", "gnip-test-publisher", my_filter)
+	
+You can view your filters by running:
+    print gnip.find_filter("gnip", "gnip-test-publisher", "myNotificationFilter")
+
+Your actors list should be (not necessarily in this order): you, mary, joeblow
+
+You can also see your filters list for each publisher by going to the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/filters
+	
+You can view notification buckets on the Gnip site by going to:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/filters/myNotificationFilter/notification
+	
+*** Activity Filter with POST URL ***
+
+Note that the full data (second parameter) of the filter object must be set to 
+true to view activity data. This example includes the optional POST URL, 
+meaning Gnip will POST via an HTTP HEAD request to this URL. The following 
+snippet creates (and gets) a notification filter called "myActivityFilter" on 
+the publisher gnip-test-publisher. 
+
+If you want notifications to be sent to a script on your server for processing, 
+you must ensure that the postURL parameter you set responds successfully to an 
+HTTP HEAD request. (note that this example will throw an error because the POST 
+URL is invalid).
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    my_filter = Filter(name="myActivityFilter", full_data=True, post_url="http://mysite.com/processingscript.blah",
+        rules=[Rule("actor", "you"), Rule("actor", "mary"), Rule("actor", "joeblow")])
+    gnip.create_filter("gnip", "gnip-test-publisher", my_filter)
+    print gnip.get_filter_activities("gnip", "gnip-test-publisher", my_filter)
+
+You can view your filters by running:
+    print gnip.find_filter("gnip", "gnip-test-publisher", "myActivityFilter")
+
+Your actors list should be (not necessarily in this order): you, mary, joeblow
+
+You can also see your filters list for each publisher by going to the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/filters
+	
+You can view notification buckets on the Gnip site by going to:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/filters/myActivityFilter/activity
+	
+	
+=== Example 3: Add rules to an existing filter ===
+
+You can add rules later to an existing filter. The following code snippet adds 
+two new rules to the filter we created above, myNotificationFilter:
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    gnip.add_rules_to_filter("gnip", "gnip-test-publisher", "myNotificationFilter",
+        rules=[Rule("actor", "sam"), Rule("actor", "judy")])
+    
+    print gnip.find_filter("gnip", "gnip-test-publisher", "myNotificationFilter")
+
+You should see the following actors: mary, you, sam, joeblow, judy
+
+    
+    
+=== Example 4: Delete a filter ===
+
+Filters can be easily deleted. The following code sample deletes the filter 
+that was created above:
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    print gnip.delete_filter("gnip", "gnip-test-publisher", "myNotificationFilter");
+	
+You should get a response message of "Success", sent from the server.
+
+
+
+=== Example 5: Retrieve activities from a publisher ===
+
+*** Activity Data Stream Request ***
+
+NOTE: You must create a filter (see Example 2 above) before you can view 
+activities for a publisher that you do not own.
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    print gnip.get_publisher_activities("gnip", "gnip-test-publisher")
+
+You can also view the current activity bucket via web on the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/activity/current.xml
+
+*** Activity Data Stream Request with Date Param ***
+
+NOTE: You must create a filter (see Example 3 below) before you can view 
+activities for a publisher that you do not own.
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    print gnip.get_publisher_activities("gnip", "gnip-test-publisher", datetime.datetime.utcnow() - datetime.timedelta(minutes=1))
+
+You can see the running list of activity buckets on the Gnip site:
+    https://prod.gnipcentral.com/gnip/publishers/gnip-test-publisher/activity/
+
+
+
+==== Publisher Actions ====
+
+In order to utilize the publisher API, you must first create a publisher. The 
+publisher name should be descriptive to you. Currently publisher's you create
+are private to your account only, and fall under the "my" scope. For now, 
+publishers cannot be deleted once they are created, so be mindful when naming
+and testing your publishers.
+
+Publishers must have one or more rule types specified so that filters can be 
+created based on the rule types. The following rule types are supported by Gnip:
+
+	Actor 
+	To
+	Regarding
+	Source
+	Tag
+	
+=== Example 1: Create a publisher
+	
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    my_publisher = Publisher("myPublisher", ["actor", "tag"])
+	print gnip.create_publisher(my_publisher)
+    
+You should see a response message of "Success".
+
+=== Example 2: Updating a publisher
+
+The following example takes an existing publisher and updates it with a new
+rule type.
+	
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    my_publisher = gnip.get_publisher("my", "myPublisher")
+    my_publisher.rule_types.append("to")
+    print gnip.update_publisher(my_publisher)
+
+You should see a response message of "Success".
+
+=== Example 3: Publishing activities
+
+Here is how you can publish activities to the activity stream:
+
+    gnip = gnip.Gnip("<your account email>","<your account password>")
+    a_payload = 
+    an_activity = activity.Activity(action="update",
+        activity_id="12345",
+        url="http://example.com",
+        sources=["web"],
+        places=[Place(point=Point(40.000, -105.002), feature_name="testPlace")],
+        actors=[xml_objects.Actor(value="bob", meta_url="http://bob.com", uid="12345")],
+        destination_urls=[xml_objects.URL(value="http://destination1.com", meta_url="http://destination1.com/meta")],
+        tags=[xml_objects.Tag(meta_url="http://tag1.com", value="tag1"), xml_objects.Tag(meta_url="http://tag2.com", value="tag2")],
+        tos=[xml_objects.To(value="you", meta_url="http://you.com")],
+        regarding_urls=[xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com"), xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com")],
+        payload=a_payload)
+    an_activity.set_at_from_string("2008-07-02T11:16:16+00:00")
+
+
+
+    
+    $gnip = new Services_Gnip("<your account email>", "<your account password>");
+	
+    $activity = new Services_Gnip_Activity('2008-07-02T11:16:16+00:00', 
+                                           'upload', 'sally', 'blog_post', 'web', 
+                                           'trains,planes,automobiles', 'bob', 'http://example.com');	
+    $mypub = $gnip->getPublisher("exampletest");
+    echo $gnip->publish($mypub, array($activity));
+	
+You should see a response message of "Success".
+
+
+
+
+
+=== Contributing ===
 
 Contributions to this library are welcome.
 

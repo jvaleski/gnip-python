@@ -2,7 +2,10 @@ from elementtree.ElementTree import *
 import xml_objects
 
 class Payload(object):
-    """Gnip Payload container class"""
+    """Gnip Payload container class
+    
+    A Payload represents the payload information in a Gnip Activity.
+    """
 
     def __init__(self, title=None, body=None, media_urls=None, raw=None):
         """Initialize the class.
@@ -15,8 +18,6 @@ class Payload(object):
         @param media_urls MediaURLs associated with the activity
         @type raw base64 & gzipped string
         @param raw Raw text of activity
-
-        Initializes the class with the proper variables.
 
         """
 

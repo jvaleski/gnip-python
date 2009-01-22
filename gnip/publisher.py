@@ -1,9 +1,9 @@
 from xml.dom.minidom import parseString
 
 class Publisher(object):
-    """Gnip publisher container class
+    """Gnip Publisher container class
 
-    This class provides an abstraction from the Gnip publisher XML.
+    This class provides an abstraction from the Gnip Publisher XML.
 
     """
     
@@ -11,7 +11,7 @@ class Publisher(object):
         """Initialize the class.
 
         @type name string
-        @param name The name of the publisher
+        @param name the name of the publisher
         @type rule_types list of strings
         @param rule_types The rule types this publisher supports
 
@@ -23,6 +23,7 @@ class Publisher(object):
         self.rule_types=rule_types
     
     def to_xml(self):
+        """ Return a XML representation of the Publisher as a string. """
         xml = '<publisher name="' + self.name + '">'
         xml += '<supportedRuleTypes>'
         
@@ -34,6 +35,12 @@ class Publisher(object):
         return xml
     
     def from_xml(self, xml):
+        """ Populates the Publisher object based on Publsiher XML
+        
+        @type xml string
+        @param xml the Publisher XML
+        
+        """
         root = parseString(xml).documentElement
         self.name = root.getAttribute("name")
         
