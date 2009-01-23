@@ -145,5 +145,5 @@ class Payload(object):
         return "[" + str(self.title) + \
             ", " + str(self.body) + \
             ", " + str(self.media_urls) + \
-            ", " + str(self.read_raw(self.__raw)) + \
+            ", " + str(self.read_raw()) + \
             "]"

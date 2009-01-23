@@ -8,6 +8,7 @@ from string import count
 from xml.dom.minidom import parseString
 import unittest
 import time
+import datetime
 import random
 from pyjavaproperties import Properties
 
@@ -251,6 +252,10 @@ class GnipTestCase(unittest.TestCase):
     def testUpdatePublisherOverPost(self):
         self.gnip.tunnel_over_post = True
         self.testUpdatePublisher()
+        
+    def testSyncClock(self):
+        response = self.gnip.sync_clock(datetime.datetime.utcnow())
+        self.assertEqual(True, isinstance(response, datetime.datetime))
 
 if __name__ == '__main__':
     unittest.main()

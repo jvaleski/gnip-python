@@ -96,7 +96,7 @@ class Filter(object):
             self.rules.append(rule)
 
     def __str__(self):
-        return "[" + self.name + ", " + self.postURL + ", " + str(self.rules) + "]"
+        return "[" + self.name + ", " + str(self.post_url) + ", " + str(self.rules) + "]"
 
     def __cmp__(self, other):
         if isinstance(other, Filter):

@@ -1,8 +1,8 @@
-import iso8601
 from elementtree.ElementTree import *
 import xml_objects
 import payload
 import place
+import iso8601
 
 class Activity(object):
     """Gnip activity container class

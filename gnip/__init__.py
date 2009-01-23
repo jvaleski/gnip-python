@@ -60,7 +60,7 @@ class Gnip:
         self.headers['Content-Encoding'] = 'gzip'
         self.headers['Content-Type'] = 'application/xml'
 
-    def sync_clock(self, datetime):
+    def sync_clock(self, theTime):
         """Adjust a time so that it corresponds with Gnip time
 
         @type datetime datetime
@@ -84,13 +84,13 @@ class Gnip:
         local_time = datetime.datetime.utcnow()
 
         # Get time from headers and parse into python format
-        gnip_time = datetime.datetime.strptime(resp["Date"], "%a, %d %b %Y %H:%M:%S %Z")
+        gnip_time = datetime.datetime.strptime(resp["date"], "%a, %d %b %Y %H:%M:%S %Z")
 
         # Determine the time difference
         time_delta = gnip_time - local_time
 
         # Return the corrected time
-        return time + time_delta
+        return theTime + time_delta
 
     def time_to_string(self, time):
         """Convert the time to a Gnip bucket formatted string.
@@ -245,7 +245,7 @@ class Gnip:
         @param publisher_name The publisher to create filter for
         @type name string
         @param name The name of the filter to find
-        @return string containing response from the server
+        @return Response which contains the Filter object
         """
 
         url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + name + ".xml"
@@ -388,8 +388,8 @@ class Gnip:
         The Filter must already exist on the service.
 
         """
-        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter_to_update.name + ".xml"
-        return self.__parse_response(self.__do_http_put(url_path, filter_to_update.to_xml()))
+        url_path = "/" + publisher_scope + "/publishers/" + publisher_name + "/filters/" + filter.name + ".xml"
+        return self.__parse_response(self.__do_http_put(url_path, filter.to_xml()))
 
     def create_publisher(self, publisher):
         """Create a Gnip publisher in the "my" scope.
@@ -429,8 +429,6 @@ class Gnip:
 
         @type publisher Publisher
         @param publisher The publisher object to update
-        @type filter_to_update Filter
-        @param filter_to_update A populated Filter object
         @return string containing response from the server
 
         Updates a pre-existing Publisher with the Publisher provided.

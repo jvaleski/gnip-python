@@ -1,4 +1,3 @@
-import iso8601
 from elementtree.ElementTree import *
 import activity
 
