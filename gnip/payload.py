@@ -30,7 +30,10 @@ class Payload(object):
         self.write_raw(raw)
 
     def read_raw(self):
-        """Get the decoded and uncompressed raw value from a payload"""
+        """Return the decoded and uncompressed raw value from a payload
+        
+        @return string
+        """
         if self.__raw is None:
             return None
         else:
@@ -38,15 +41,22 @@ class Payload(object):
 
     def write_raw(self, raw):
         """Set the raw for the payload.
-           The raw value will be compressed and encoded before being published to a Gnip server.
+        
+           @type raw string
+           @param raw string will be compressed and encoded.
         """
+        
         if raw is None:
             self.__raw = None
         else:
             self.__raw = self.__encode(self.__compress_with_gzip(raw))
 
     def from_xml_node(self, payload_xml_node):
-        """ Populates payload from a payload xml node """
+        """ Populates payload from a payload xml node
+        
+        @type payload_xml_node Element
+        @param payload_xml_node an Element representing the Payload for an Activity.
+        """
 
         if payload_xml_node is not None:
 
@@ -80,7 +90,7 @@ class Payload(object):
     def to_xml_node(self):
         """ Return a XML representation of this object
 
-        @return string containing XML representation of the object
+        @return string containing XML representation of the Payload
 
         Returns a XML representation of this object.
 

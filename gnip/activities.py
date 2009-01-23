@@ -3,6 +3,7 @@ from elementtree.ElementTree import *
 import activity
 
 class Activities(object):
+    """A list of Gnip Activities."""
 
     def __init__(self, activitiyList=[]):
         self.items = activitiyList
