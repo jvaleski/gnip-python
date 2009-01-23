@@ -307,12 +307,15 @@ Here is how you can publish activities to the activity stream:
     import gnip
     from gnip import *
     gnip = gnip.Gnip("<your account email>","<your account password>")
-    a_payload = 
+    a_payload = payload.Payload(title="Title",
+                                body="Body",
+                                media_urls=[xml_objects.URL(value="http://media1.com", meta_url="http://media1.com/meta"), xml_objects.URL(value="http://media2.com", meta_url="http://media2.com/meta")],
+                                raw="raw")
     an_activity = activity.Activity(action="update",
         activity_id="12345",
         url="http://example.com",
         sources=["web"],
-        places=[Place(point=Point(40.000, -105.002), feature_name="testPlace")],
+        places=[place.Place(xml_objects.Point(40.000, -105.002), feature_name="testPlace")],
         actors=[xml_objects.Actor(value="bob", meta_url="http://bob.com", uid="12345")],
         destination_urls=[xml_objects.URL(value="http://destination1.com", meta_url="http://destination1.com/meta")],
         tags=[xml_objects.Tag(meta_url="http://tag1.com", value="tag1"), xml_objects.Tag(meta_url="http://tag2.com", value="tag2")],
@@ -320,23 +323,9 @@ Here is how you can publish activities to the activity stream:
         regarding_urls=[xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com"), xml_objects.URL(value="http://regarding1.com", meta_url="http://regarding2.com")],
         payload=a_payload)
     an_activity.set_at_from_string("2008-07-02T11:16:16+00:00")
-
-
-
-    
-    $gnip = new Services_Gnip("<your account email>", "<your account password>");
+    response = gnip.publish_activities("myPublisher", activities.Activities([an_activity]))
+    print response.code
 	
-    $activity = new Services_Gnip_Activity('2008-07-02T11:16:16+00:00', 
-                                           'upload', 'sally', 'blog_post', 'web', 
-                                           'trains,planes,automobiles', 'bob', 'http://example.com');	
-    $mypub = $gnip->getPublisher("exampletest");
-    echo $gnip->publish($mypub, array($activity));
-	
-You should see a response message of "Success".
-
-
-
-
 
 === Contributing ===
 
